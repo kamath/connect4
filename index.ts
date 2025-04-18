@@ -2,13 +2,54 @@ import { Stagehand, Page, BrowserContext } from "@browserbasehq/stagehand";
 import StagehandConfig from "./stagehand.config.js";
 import chalk from "chalk";
 import boxen from "boxen";
-import { drawObserveOverlay, clearOverlays, actWithCache } from "./utils.js";
+import { announce } from "./utils.js";
 import { z } from "zod";
+import { google } from "@ai-sdk/google";
+import { openai } from "@ai-sdk/openai";
+import { AISdkClient } from "./llm_clients/aisdk_client.js";
+import { generateText, CoreMessage } from "ai";
 
-const MODEL_1 = "gemini-2.0-flash";
-const MODEL_2 = "gemini-2.0-flash";
+const MODEL_1 = google("gemini-2.5-flash-preview-04-17");
+const MODEL_2 = openai("gpt-4.1");
 
-const ROOM_NAME = `stagehandarena426`;
+const ROOM_NAME = `stagehand-${crypto.randomUUID()}`;
+
+async function playGame(
+  stagehandPlayer1: Stagehand,
+  stagehandPlayer2: Stagehand
+) {
+  while (true) {
+    const yellowPlayer = stagehandPlayer1.agent({
+      provider: "openai",
+      model: "computer-use-preview",
+    });
+    const redPlayer = stagehandPlayer2.agent({
+      provider: "openai",
+      model: "computer-use-preview",
+    });
+
+    const yellowPlayerInstruction = await getPlayerInstructions(
+      stagehandPlayer1,
+      "yellow"
+    );
+    announce(yellowPlayerInstruction, chalk.yellow(MODEL_1.modelId));
+
+    await yellowPlayer.execute({
+      instruction: `You are the yellow player playing connect 4. Make ONLY ONE move. The move is described in the following instruction: "${yellowPlayerInstruction}"`,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const redPlayerInstruction = await getPlayerInstructions(
+      stagehandPlayer2,
+      "red"
+    );
+    announce(redPlayerInstruction, chalk.red(MODEL_2.modelId));
+    await redPlayer.execute({
+      instruction: `You are the red player playing connect 4. Make ONLY ONE move. The move is described in the following instruction: "${redPlayerInstruction}"`,
+    });
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+}
 
 async function readyPlayer1({
   page,
@@ -23,7 +64,7 @@ async function readyPlayer1({
   await page.act({
     action: "type %name% in the name field",
     variables: {
-      name: "model 1",
+      name: MODEL_1.modelId.replace(/[^a-zA-Z0-9]/g, ""),
     },
   });
 
@@ -50,12 +91,43 @@ async function readyPlayer2(
   await page.act({
     action: "type %name% in the name field",
     variables: {
-      name: "model 2",
+      name: MODEL_2.modelId.replace(/[^a-zA-Z0-9]/g, ""),
     },
   });
 
   await page.act("click the play button");
 }
+
+async function getPlayerInstructions(
+  stagehandPlayer: Stagehand,
+  player: "yellow" | "red"
+) {
+  const screenshotData = await stagehandPlayer.page.screenshot();
+  const messages: CoreMessage[] = [
+    {
+      role: "user",
+      content: [
+        {
+          type: "text",
+          text: `You are an assistant helping the ${player} player playing connect 4.
+			Analyze the game and tell the ${player} player what move to make as clearly and concisely as possible.
+			`,
+        },
+        {
+          type: "image",
+          image: screenshotData,
+        },
+      ],
+    },
+  ];
+  const { text: instruction } = await generateText({
+    model: MODEL_1,
+    messages: messages,
+  });
+
+  return instruction;
+}
+
 /**
  * This is the main function that runs when you do npm run start
  *
@@ -65,7 +137,7 @@ async function readyPlayer2(
 async function run() {
   const stagehandPlayer1 = new Stagehand({
     ...StagehandConfig,
-    modelName: MODEL_1,
+    llmClient: new AISdkClient({ model: MODEL_1 }),
   });
   await stagehandPlayer1.init();
 
@@ -93,13 +165,32 @@ async function run() {
     stagehand: stagehandPlayer1,
   });
 
+  console.log("URL", url);
+
   const stagehandPlayer2 = new Stagehand({
     ...StagehandConfig,
-    modelName: MODEL_2,
+    llmClient: new AISdkClient({ model: MODEL_2 }),
   });
   await stagehandPlayer2.init();
 
-  console.log("URL", url);
+  if (
+    StagehandConfig.env === "BROWSERBASE" &&
+    stagehandPlayer2.browserbaseSessionID
+  ) {
+    console.log(
+      boxen(
+        `View this session live in your browser: \n${chalk.blue(
+          `https://browserbase.com/sessions/${stagehandPlayer2.browserbaseSessionID}`
+        )}`,
+        {
+          title: "Browserbase",
+          padding: 1,
+          margin: 3,
+        }
+      )
+    );
+  }
+
   await readyPlayer2(
     {
       page: stagehandPlayer2.page,
@@ -111,28 +202,8 @@ async function run() {
 
   await stagehandPlayer1.page.act("click 'start game'");
 
-  while (true) {
-    const agent1 = await stagehandPlayer1.agent({
-      provider: "openai",
-      model: "computer-use-preview",
-    });
-    const agent2 = await stagehandPlayer2.agent({
-      provider: "anthropic",
-      model: "claude-3-7-sonnet-20250219",
-    });
-    await agent1.execute({
-      instruction:
-        "you are the yellow player playing connect 4, make ONLY ONE move",
-    });
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    await agent2.execute({
-      instruction:
-        "you are the red player playing connect 4, make ONLY ONE move",
-    });
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-  }
+  await playGame(stagehandPlayer1, stagehandPlayer2);
 
-  await new Promise((resolve) => setTimeout(resolve, 100_000));
   await stagehandPlayer1.close();
   await stagehandPlayer2.close();
   console.log(
