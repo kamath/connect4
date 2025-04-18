@@ -11,6 +11,7 @@ export const player2modelAtom = atom<string>(
 export const winnerAtom = atom<string | null>(null);
 export const turnAtom = atom<
   | "press start"
+  | "error: models can't be the same"
   | "starting up..."
   | "setting up player 1"
   | "setting up player 2"

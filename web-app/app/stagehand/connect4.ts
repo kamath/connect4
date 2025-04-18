@@ -2,11 +2,11 @@
 
 import { Stagehand } from "@browserbasehq/stagehand";
 import { initFromSessionId } from "./main";
-import { generateText, LanguageModel } from "ai";
+import { generateObject, LanguageModel } from "ai";
 import { CoreMessage } from "ai";
-import { announce, getModel } from "./utils";
-import chalk from "chalk";
+import { getModel } from "./utils";
 import { z } from "zod";
+import { Connect4Instruction } from "@/types";
 
 const ROOM_NAME = `stagehand-${crypto.randomUUID()}`;
 
@@ -56,7 +56,7 @@ async function getPlayerInstructions(
   stagehandPlayer: Stagehand,
   player: "yellow" | "red",
   model: LanguageModel
-) {
+): Promise<Connect4Instruction> {
   const screenshotData = await stagehandPlayer.page.screenshot();
   const messages: CoreMessage[] = [
     {
@@ -68,7 +68,7 @@ async function getPlayerInstructions(
 		  First, start by describing the current state of the board, especially as it relates to ${player}'s strengths and weaknesses.
 		  Then, reference the current state of the board to tell the ${player} player what move to make as clearly and concisely as possible.
 			Column numbers are 1-indexed, so the first column is 1, the second is 2, etc.
-			You can only make one move, but you can provide up to 2 alternative moves that you think are good.
+			You can only make one move, you must also provide 2 alternative moves that you think are good.
 			`,
         },
         {
@@ -78,12 +78,32 @@ async function getPlayerInstructions(
       ],
     },
   ];
-  const { text: instruction } = await generateText({
+  const { object: instruction } = await generateObject({
     model: model,
     messages: messages,
+    schema: z.object({
+      analysis: z
+        .string()
+        .describe(
+          "A description of the current state of the board, especially as it relates to the ${player}'s strengths and weaknesses."
+        ),
+      bestMove: z
+        .string()
+        .describe("The best move to make, i.e. 'Make a move in column 1'"),
+      alternativeMoves: z
+        .array(z.string())
+        .describe(
+          "2 alternative moves that you think are good, i.e. 'Make a move in column 2' and 'Make a move in column 3'"
+        ),
+    }),
   });
 
-  return instruction;
+  return {
+    turn: `${player} player turn`,
+    analysis: instruction.analysis,
+    bestMove: instruction.bestMove,
+    alternativeMoves: instruction.alternativeMoves,
+  };
 }
 
 export async function startGame(
@@ -100,13 +120,13 @@ export async function startGame(
 export async function checkGameOver(sessionId: string, model: string) {
   const stagehandPlayer = await initFromSessionId(sessionId, model);
   const page = stagehandPlayer.page;
-  const { gameOver } = await page.extract({
+  const { winner } = await page.extract({
     instruction: "Check if the game is over",
     schema: z.object({
-      gameOver: z.boolean(),
+      winner: z.enum(["yellow wins", "red wins", "tie", "in progress"]),
     }),
   });
-  return gameOver;
+  return winner;
 }
 
 // async function playGame(
@@ -164,7 +184,6 @@ export async function getMove(
     player,
     client
   );
-  announce(instruction, chalk[player](model));
   return instruction;
 }
 
@@ -183,7 +202,8 @@ export async function makeMove(
   });
 
   await agent.execute({
-    instruction: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, where COLUMNS ARE 1-INDEXED: "${instruction}"`,
+    instruction: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, where COLUMNS ARE 1-INDEXED: "${instruction}". It is imperative that you ONLY make the move in the column specified in the instruction.`,
+    maxSteps: 5,
   });
   await new Promise((resolve) => setTimeout(resolve, 1000));
 }
