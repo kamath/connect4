@@ -1,5 +1,6 @@
 "use client";
 
+import { useAtom } from "jotai";
 import {
   player1debugUrlAtom,
   player1modelAtom,
@@ -7,11 +8,20 @@ import {
   player2debugUrlAtom,
   player2modelAtom,
   player2sessionIdAtom,
+  turnAtom,
+  winnerAtom,
 } from "@/atoms";
 import { StagehandEmbed } from "../components/stagehand/stagehandEmbed";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useCallback, useState } from "react";
-import { readyPlayer1, readyPlayer2, startGame } from "../stagehand/connect4";
+import {
+  checkGameOver,
+  getMove,
+  makeMove,
+  readyPlayer1,
+  readyPlayer2,
+  startGame,
+} from "../stagehand/connect4";
 import { startBBSSession } from "../stagehand/main";
 
 export default function Connect4() {
@@ -21,11 +31,20 @@ export default function Connect4() {
   const setPlayer1SessionId = useSetAtom(player1sessionIdAtom);
   const setPlayer2SessionId = useSetAtom(player2sessionIdAtom);
   const setPlayer1debugUrl = useSetAtom(player1debugUrlAtom);
-
+  const [winner, setWinner] = useAtom(winnerAtom);
+  const [turn, setTurn] = useAtom(turnAtom);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [playerInstructions, setPlayerInstructions] = useState<{
+    yellow: string[];
+    red: string[];
+  }>({
+    yellow: [],
+    red: [],
+  });
 
   const startSession = useCallback(async () => {
     setIsPlaying(true);
+    setPlayerInstructions({ yellow: [], red: [] }); // Reset instructions when starting new game
     console.log("startSession");
     const { sessionId: player1SessionId, debugUrl: player1DebugUrl } =
       await startBBSSession();
@@ -37,12 +56,48 @@ export default function Connect4() {
     setPlayer2SessionId(player2SessionId);
     const { url: gameUrl } = await readyPlayer1(player1SessionId, player1model);
     await readyPlayer2(gameUrl, player2SessionId, player2model);
-    await startGame(
-      player1SessionId,
-      player1model,
-      player2SessionId,
-      player2model
-    );
+    await startGame(player1SessionId, player1model);
+    setTurn("yellow");
+    while (true) {
+      const yellowPlayerInstruction = await getMove(
+        player1SessionId,
+        player1model,
+        "yellow"
+      );
+      setPlayerInstructions((prev) => ({
+        ...prev,
+        yellow: [...prev.yellow, yellowPlayerInstruction],
+      }));
+      await makeMove(player1SessionId, "yellow", yellowPlayerInstruction);
+      const gameOverPlayer1 = await checkGameOver(
+        player1SessionId,
+        player1model
+      );
+      if (gameOverPlayer1) {
+        setWinner("yellow");
+        break;
+      }
+      setTurn("red");
+      const redPlayerInstruction = await getMove(
+        player2SessionId,
+        player2model,
+        "red"
+      );
+      setPlayerInstructions((prev) => ({
+        ...prev,
+        red: [...prev.red, redPlayerInstruction],
+      }));
+      await makeMove(player2SessionId, "red", redPlayerInstruction);
+      const gameOverPlayer2 = await checkGameOver(
+        player2SessionId,
+        player2model
+      );
+      if (gameOverPlayer2) {
+        setWinner("red");
+        break;
+      }
+      setTurn("yellow");
+    }
   }, [
     player1model,
     player2model,
@@ -50,18 +105,57 @@ export default function Connect4() {
     setPlayer1SessionId,
     setPlayer2debugUrl,
     setPlayer2SessionId,
+    setWinner,
+    setTurn,
   ]);
+
+  if (winner) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen w-full p-8">
+        <h1 className="text-2xl font-bold">Game Over - {winner} wins!</h1>
+      </div>
+    );
+  }
 
   return (
     <>
       <div className="flex flex-col items-center justify-center min-h-screen w-full p-8">
+        {turn && (
+          <h1 className="text-2xl font-bold">
+            {turn === "yellow" ? "Yellow" : "Red"} Turn
+          </h1>
+        )}
         {isPlaying ? (
-          <div className="bg-gray-100 rounded-lg w-full h-full flex-grow grid grid-cols-2 gap-4">
-            <div className="">
-              <StagehandEmbed player="player1" title={player1model} />
+          <div className="bg-gray-100 rounded-lg w-full grid grid-cols-2 gap-4">
+            <div className="flex flex-col">
+              <div>
+                <StagehandEmbed player="player1" title={player1model} />
+              </div>
+              <div className="mt-4 p-4 bg-white rounded-lg h-1/5 overflow-y-auto">
+                <h3 className="font-bold mb-2">Yellow Player Instructions:</h3>
+                <ul className="list-disc pl-4">
+                  {playerInstructions.yellow.map((instruction, index) => (
+                    <li key={index} className="text-yellow-600">
+                      {instruction}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
-            <div className="">
-              <StagehandEmbed player="player2" title={player2model} />
+            <div className="flex flex-col">
+              <div>
+                <StagehandEmbed player="player2" title={player2model} />
+              </div>
+              <div className="mt-4 p-4 bg-white rounded-lg h-1/5 overflow-y-auto">
+                <h3 className="font-bold mb-2">Red Player Instructions:</h3>
+                <ul className="list-disc pl-4">
+                  {playerInstructions.red.map((instruction, index) => (
+                    <li key={index} className="text-red-600">
+                      {instruction}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
         ) : (

@@ -8,3 +8,5 @@ export const player1modelAtom = atom<string>("google/gemini-2.0-flash");
 export const player2modelAtom = atom<string>(
   "google/gemini-2.5-flash-preview-04-17"
 );
+export const winnerAtom = atom<string | null>(null);
+export const turnAtom = atom<"yellow" | "red" | null>(null);
