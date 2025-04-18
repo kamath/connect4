@@ -4,7 +4,8 @@ import { Stagehand } from "@browserbasehq/stagehand";
 import { initFromSessionId } from "./main";
 import { generateText, LanguageModel } from "ai";
 import { CoreMessage } from "ai";
-import { getModel } from "./utils";
+import { announce, getModel } from "./utils";
+import chalk from "chalk";
 
 const ROOM_NAME = `stagehand-${crypto.randomUUID()}`;
 
@@ -64,6 +65,8 @@ async function getPlayerInstructions(
           type: "text",
           text: `You are an assistant helping the ${player} player playing connect 4.
 			Analyze the game and tell the ${player} player what move to make as clearly and concisely as possible.
+			Column numbers are 1-indexed, so the first column is 1, the second is 2, etc.
+			You can only make one move, but you can provide up to 2 alternative moves that you think are good.
 			`,
         },
         {
@@ -91,12 +94,12 @@ async function playGame(
   const client2 = getModel(model2);
   while (true) {
     const yellowPlayer = stagehandPlayer1.agent({
-      provider: "openai",
-      model: "computer-use-preview",
+      provider: "anthropic",
+      model: "claude-3-7-sonnet-20250219",
     });
     const redPlayer = stagehandPlayer2.agent({
-      provider: "openai",
-      model: "computer-use-preview",
+      provider: "anthropic",
+      model: "claude-3-7-sonnet-20250219",
     });
 
     const yellowPlayerInstruction = await getPlayerInstructions(
@@ -104,10 +107,10 @@ async function playGame(
       "yellow",
       client1
     );
-    // announce(yellowPlayerInstruction, chalk.yellow(MODEL_1.modelId));
+    announce(yellowPlayerInstruction, chalk.yellow(model1));
 
     await yellowPlayer.execute({
-      instruction: `You are the yellow player playing connect 4. Make ONLY ONE move. The move is described in the following instruction: "${yellowPlayerInstruction}"`,
+      instruction: `You are the yellow player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, where COLUMNS ARE 1-INDEXED: "${yellowPlayerInstruction}"`,
     });
     await new Promise((resolve) => setTimeout(resolve, 1000));
 
@@ -116,9 +119,9 @@ async function playGame(
       "red",
       client2
     );
-    // announce(redPlayerInstruction, chalk.red(MODEL_2.modelId));
+    announce(redPlayerInstruction, chalk.red(model2));
     await redPlayer.execute({
-      instruction: `You are the red player playing connect 4. Make ONLY ONE move. The move is described in the following instruction: "${redPlayerInstruction}"`,
+      instruction: `You are the red player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, where COLUMNS ARE 1-INDEXED: "${redPlayerInstruction}"`,
     });
     await new Promise((resolve) => setTimeout(resolve, 1000));
   }

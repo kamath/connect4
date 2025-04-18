@@ -10,7 +10,7 @@ import {
 } from "@/atoms";
 import { StagehandEmbed } from "../components/stagehand/stagehandEmbed";
 import { useAtomValue, useSetAtom } from "jotai";
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { readyPlayer1, readyPlayer2, startGame } from "../stagehand/connect4";
 import { startBBSSession } from "../stagehand/main";
 
@@ -22,7 +22,10 @@ export default function Connect4() {
   const setPlayer2SessionId = useSetAtom(player2sessionIdAtom);
   const setPlayer1debugUrl = useSetAtom(player1debugUrlAtom);
 
+  const [isPlaying, setIsPlaying] = useState(false);
+
   const startSession = useCallback(async () => {
+    setIsPlaying(true);
     console.log("startSession");
     const { sessionId: player1SessionId, debugUrl: player1DebugUrl } =
       await startBBSSession();
@@ -50,21 +53,27 @@ export default function Connect4() {
   ]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen w-full p-8">
-      <div className="bg-gray-100 rounded-lg w-full h-full flex-grow grid grid-cols-2 gap-4">
-        <div className="">
-          <StagehandEmbed player="player1" />
-        </div>
-        <div className="">
-          <StagehandEmbed player="player2" />
-        </div>
+    <>
+      <div className="flex flex-col items-center justify-center min-h-screen w-full p-8">
+        {isPlaying ? (
+          <div className="bg-gray-100 rounded-lg w-full h-full flex-grow grid grid-cols-2 gap-4">
+            <div className="">
+              <StagehandEmbed player="player1" title={player1model} />
+            </div>
+            <div className="">
+              <StagehandEmbed player="player2" title={player2model} />
+            </div>
+          </div>
+        ) : (
+          <a
+            className="bg-blue-500 text-white px-4 py-2 rounded-md"
+            onClick={startSession}
+            href={"#"}
+          >
+            Start Session
+          </a>
+        )}
       </div>
-      <button
-        className="bg-blue-500 text-white px-4 py-2 rounded-md"
-        onClick={startSession}
-      >
-        Start Session
-      </button>
-    </div>
+    </>
   );
 }

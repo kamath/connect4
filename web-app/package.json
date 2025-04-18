@@ -16,6 +16,7 @@
     "@browserbasehq/stagehand": "^2.1.0",
     "ai": "^4.3.9",
     "boxen": "^8.0.1",
+    "chalk": "^5.4.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "jotai": "^2.12.3",
