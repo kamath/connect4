@@ -9,4 +9,15 @@ export const player2modelAtom = atom<string>(
   "google/gemini-2.5-flash-preview-04-17"
 );
 export const winnerAtom = atom<string | null>(null);
-export const turnAtom = atom<"yellow" | "red" | null>(null);
+export const turnAtom = atom<
+  | "press start"
+  | "starting up..."
+  | "setting up player 1"
+  | "setting up player 2"
+  | "yellow getting turn..."
+  | "red getting turn..."
+  | "yellow executing turn..."
+  | "red executing turn..."
+  | "yellow win"
+  | "red win"
+>("press start");
