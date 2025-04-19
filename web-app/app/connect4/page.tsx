@@ -42,6 +42,7 @@ import {
 import { Connect4Instruction } from "@/types";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import Image from "next/image";
 export default function Connect4() {
   const [player1model, setPlayer1model] = useAtom(player1modelAtom);
   const [player2model, setPlayer2model] = useAtom(player2modelAtom);
@@ -58,6 +59,7 @@ export default function Connect4() {
     Connect4Instruction[]
   >([]);
   const [instructionIndex, setInstructionIndex] = useState(0);
+  const [screenshot, setScreenshot] = useState<string | null>(null);
 
   const startSession = useCallback(async () => {
     if (player1model === player2model) {
@@ -90,7 +92,7 @@ export default function Connect4() {
       );
       setPlayerInstructions((prev) => [...prev, yellowPlayerInstruction]);
       setTurn("yellow executing turn...");
-      await makeMove(
+      const { screenshot: yellowScreenshot } = await makeMove(
         player1SessionId,
         "yellow",
         `Make move ${
@@ -99,12 +101,13 @@ export default function Connect4() {
           ", "
         )}`
       );
+      setScreenshot(yellowScreenshot);
       const gameOverPlayer1 = await checkGameOver(
         player1SessionId,
         player1model
       );
       if (gameOverPlayer1 !== "in progress") {
-        setWinner(gameOverPlayer1);
+        setWinner("yellow wins");
         break;
       }
       setTurn("red getting turn...");
@@ -115,7 +118,7 @@ export default function Connect4() {
       );
       setPlayerInstructions((prev) => [...prev, redPlayerInstruction]);
       setTurn("red executing turn...");
-      await makeMove(
+      const { screenshot: redScreenshot } = await makeMove(
         player2SessionId,
         "red",
         `Make move ${
@@ -124,12 +127,13 @@ export default function Connect4() {
           ", "
         )}`
       );
+      setScreenshot(redScreenshot);
       const gameOverPlayer2 = await checkGameOver(
         player2SessionId,
         player2model
       );
       if (gameOverPlayer2 !== "in progress") {
-        setWinner(gameOverPlayer2);
+        setWinner("red wins");
         break;
       }
       setTurn("yellow getting turn...");
@@ -199,26 +203,41 @@ export default function Connect4() {
                 }`}
               >
                 <h1 className="text-lg font-bold mb-2">{turn}</h1>
-                <MemoizedMarkdown
-                  content={
-                    turn.includes("getting turn")
-                      ? "Waiting for move..."
-                      : turn.includes("yellow")
-                      ? playerInstructions[playerInstructions.length - 1]
-                          ?.analysis +
-                          `\n\n\n\n**Best move:** ${
+                {turn.includes("turn") && (
+                  <MemoizedMarkdown
+                    content={
+                      turn.includes("getting turn")
+                        ? "Waiting for move..."
+                        : turn.includes("yellow")
+                        ? `**Analysis:** ${
+                            playerInstructions[playerInstructions.length - 1]
+                              ?.analysis
+                          }
+                          \n\n**Best move:** ${
                             playerInstructions[playerInstructions.length - 1]
                               ?.bestMove
                           }` || "No move yet"
-                      : playerInstructions[playerInstructions.length - 1]
-                          ?.analysis +
-                          `<br /><br />**Best move:** ${
+                        : `**Analysis:** ${
+                            playerInstructions[playerInstructions.length - 1]
+                              ?.analysis
+                          }
+                          \n\n**Best move:** ${
                             playerInstructions[playerInstructions.length - 1]
                               ?.bestMove
                           }` || "No move yet"
-                  }
-                  id={turn}
-                />
+                    }
+                    id={turn}
+                  />
+                )}
+                {screenshot && (
+                  <Image
+                    src={`data:image/png;base64,${screenshot}`}
+                    alt="Game board"
+                    className="mb-4 rounded-lg"
+                    width={1000}
+                    height={1000}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -273,6 +292,11 @@ export default function Connect4() {
               </SelectItem>
               <SelectItem value="openai/gpt-4o">GPT-4o</SelectItem>
               <SelectItem value="openai/gpt-4o-mini">GPT-4o Mini</SelectItem>
+              <SelectItem value="openai/o3-mini">O3 Mini</SelectItem>
+              <SelectItem value="openai/o4-mini">O4 Mini</SelectItem>
+              <SelectItem value="openai/gpt-4.1">GPT-4.1</SelectItem>
+              <SelectItem value="openai/gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
+              <SelectItem value="openai/gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
               <SelectItem value="anthropic/claude-3-5-sonnet-latest">
                 Claude 3.5 Sonnet
               </SelectItem>
@@ -299,6 +323,11 @@ export default function Connect4() {
               </SelectItem>
               <SelectItem value="openai/gpt-4o">GPT-4o</SelectItem>
               <SelectItem value="openai/gpt-4o-mini">GPT-4o Mini</SelectItem>
+              <SelectItem value="openai/o3-mini">O3 Mini</SelectItem>
+              <SelectItem value="openai/o4-mini">O4 Mini</SelectItem>
+              <SelectItem value="openai/gpt-4.1">GPT-4.1</SelectItem>
+              <SelectItem value="openai/gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
+              <SelectItem value="openai/gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
               <SelectItem value="anthropic/claude-3-5-sonnet-latest">
                 Claude 3.5 Sonnet
               </SelectItem>

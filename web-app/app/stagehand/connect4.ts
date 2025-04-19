@@ -7,8 +7,7 @@ import { CoreMessage } from "ai";
 import { getModel } from "./utils";
 import { z } from "zod";
 import { Connect4Instruction } from "@/types";
-
-const ROOM_NAME = `stagehand-${crypto.randomUUID()}`;
+import { google } from "@ai-sdk/google";
 
 export async function readyPlayer1(sessionId: string, model: string) {
   const stagehand = await initFromSessionId(sessionId, model);
@@ -24,7 +23,7 @@ export async function readyPlayer1(sessionId: string, model: string) {
   await page.act({
     action: "Type %roomname% in the room name field",
     variables: {
-      roomname: ROOM_NAME,
+      roomname: `stagehand-${crypto.randomUUID()}`,
     },
   });
 
@@ -68,6 +67,7 @@ async function getPlayerInstructions(
 		  First, start by describing the current state of the board, especially as it relates to ${player}'s strengths and weaknesses.
 		  Then, reference the current state of the board to tell the ${player} player what move to make as clearly and concisely as possible.
 			Column numbers are 1-indexed, so the first column is 1, the second is 2, etc.
+			Reference the column as "the first column from the left" or "the second column from the right" etc.
 			You can only make one move, you must also provide 2 alternative moves that you think are good.
 			`,
         },
@@ -129,49 +129,6 @@ export async function checkGameOver(sessionId: string, model: string) {
   return winner;
 }
 
-// async function playGame(
-//   stagehandPlayer1: Stagehand,
-//   model1: string,
-//   stagehandPlayer2: Stagehand,
-//   model2: string
-// ) {
-//   const client1 = getModel(model1);
-//   const client2 = getModel(model2);
-//   while (true) {
-//     const yellowPlayer = stagehandPlayer1.agent({
-//       provider: "anthropic",
-//       model: "claude-3-7-sonnet-20250219",
-//     });
-//     const redPlayer = stagehandPlayer2.agent({
-//       provider: "anthropic",
-//       model: "claude-3-7-sonnet-20250219",
-//     });
-
-//     const yellowPlayerInstruction = await getPlayerInstructions(
-//       stagehandPlayer1,
-//       "yellow",
-//       client1
-//     );
-//     announce(yellowPlayerInstruction, chalk.yellow(model1));
-
-//     await yellowPlayer.execute({
-//       instruction: `You are the yellow player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, where COLUMNS ARE 1-INDEXED: "${yellowPlayerInstruction}"`,
-//     });
-//     await new Promise((resolve) => setTimeout(resolve, 1000));
-
-//     const redPlayerInstruction = await getPlayerInstructions(
-//       stagehandPlayer2,
-//       "red",
-//       client2
-//     );
-//     announce(redPlayerInstruction, chalk.red(model2));
-//     await redPlayer.execute({
-//       instruction: `You are the red player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, where COLUMNS ARE 1-INDEXED: "${redPlayerInstruction}"`,
-//     });
-//     await new Promise((resolve) => setTimeout(resolve, 1000));
-//   }
-// }
-
 export async function getMove(
   sessionId: string,
   model: string,
@@ -187,6 +144,12 @@ export async function getMove(
   return instruction;
 }
 
+export async function getScreenshot(sessionId: string, model: string) {
+  const stagehandPlayer = await initFromSessionId(sessionId, model);
+  const screenshot = await stagehandPlayer.page.screenshot();
+  return screenshot.toString("base64");
+}
+
 export async function makeMove(
   sessionId: string,
   player: "yellow" | "red",
@@ -196,14 +159,22 @@ export async function makeMove(
     sessionId,
     "google/gemini-2.0-flash"
   );
-  const agent = stagehandPlayer.agent({
-    provider: "anthropic",
-    model: "claude-3-7-sonnet-20250219",
+
+  const { object } = await generateObject({
+    model: google("gemini-2.0-flash"),
+    prompt: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction: "${instruction}", get the column INDEX (0-indexed) of the move, assuming 7 total columns.`,
+    schema: z.object({
+      column: z.number().describe("The column index to make the move in"),
+      alternativeMoves: z
+        .array(z.number())
+        .describe("any included alternative column indices to click")
+        .optional(),
+    }),
   });
 
-  await agent.execute({
-    instruction: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, where COLUMNS ARE 1-INDEXED: "${instruction}". It is imperative that you ONLY make the move in the column specified in the instruction.`,
-    maxSteps: 5,
-  });
-  await new Promise((resolve) => setTimeout(resolve, 1000));
+  await stagehandPlayer.page.locator(`#cell-1-${object.column}`).click();
+
+  // Get screenshot after move
+  const screenshot = await getScreenshot(sessionId, "google/gemini-2.0-flash");
+  return { screenshot };
 }
