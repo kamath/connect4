@@ -20,8 +20,8 @@ import {
   readyPlayer1,
   readyPlayer2,
   startGame,
-} from "../stagehand/connect4";
-import { startBBSSession } from "../stagehand/main";
+} from "../connect4";
+import { startBBSSession } from "../main";
 import { MemoizedMarkdown } from "../components/memoized-markdown";
 import {
   Select,
