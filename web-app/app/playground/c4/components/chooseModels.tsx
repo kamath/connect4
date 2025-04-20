@@ -13,7 +13,7 @@ import {
   player1modelAtom,
   player2modelAtom,
   turnAtom,
-} from "@/atoms";
+} from "../atoms";
 
 const MODELS = [
   {

@@ -4,3 +4,9 @@ export type Connect4Instruction = {
   bestMove: string;
   alternativeMoves: string[];
 };
+
+export type StatusUpdate = {
+  timestamp: string;
+  instruction: string | Connect4Instruction;
+  screenshot?: string;
+};

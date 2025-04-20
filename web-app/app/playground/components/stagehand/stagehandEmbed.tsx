@@ -1,20 +1,14 @@
 "use client";
 
-import { player1debugUrlAtom, player2debugUrlAtom } from "@/atoms";
-import { useAtomValue } from "jotai";
 import { Loader2 } from "lucide-react";
 
 export function StagehandEmbed({
-  player,
+  debugUrl,
   title,
 }: {
-  player: "player1" | "player2";
+  debugUrl: string | null;
   title: string;
 }) {
-  const debugUrl = useAtomValue(
-    player === "player1" ? player1debugUrlAtom : player2debugUrlAtom
-  );
-
   return (
     <div className="w-full h-full flex items-center justify-center flex-col">
       <div className="w-full h-full flex flex-col items-center justify-center">

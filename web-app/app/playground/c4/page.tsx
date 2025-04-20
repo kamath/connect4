@@ -14,7 +14,6 @@ import {
   turnAtom,
   winnerAtom,
 } from "./atoms";
-import { StagehandEmbed } from "../components/stagehand/stagehandEmbed";
 import { useSetAtom } from "jotai";
 import { useCallback, useEffect } from "react";
 import {
@@ -26,26 +25,38 @@ import {
   startGame,
 } from "../connect4";
 import { startBBSSession } from "../main";
-import { cn } from "@/lib/utils";
-import { ChooseModels } from "../c4/components/chooseModels";
+import { ChooseModels } from "./components/chooseModels";
 import { GameOver } from "../components/stagehand/gameOver";
-import { HorizontalTurnStatus } from "./components/horizontalTurnStatus";
+import { StreamLayout } from "./components/stream-layout";
 export default function Connect4() {
   const player1model = useAtomValue(player1modelAtom);
   const player2model = useAtomValue(player2modelAtom);
-  const setPlayer2debugUrl = useSetAtom(player2debugUrlAtom);
   const setPlayer1SessionId = useSetAtom(player1sessionIdAtom);
   const setPlayer2SessionId = useSetAtom(player2sessionIdAtom);
   const setPlayer1debugUrl = useSetAtom(player1debugUrlAtom);
+  const setPlayer2debugUrl = useSetAtom(player2debugUrlAtom);
   const [winner, setWinner] = useAtom(winnerAtom);
-  const [turn, setTurn] = useAtom(turnAtom);
+  const setTurn = useSetAtom(turnAtom);
   const isPlaying = useAtomValue(isPlayingAtom);
-  const setPlayerInstructions = useSetAtom(playerInstructionsAtom);
+  const [playerInstructions, setPlayerInstructions] = useAtom(
+    playerInstructionsAtom
+  );
   const setScreenshot = useSetAtom(screenshotAtom);
+  useEffect(() => {
+    console.log(playerInstructions);
+  }, [playerInstructions]);
 
   const startSession = useCallback(async () => {
     setTurn("starting up...");
-    setPlayerInstructions([]); // Reset instructions when starting new game
+    setPlayerInstructions([
+      {
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        instruction: "starting up...",
+      },
+    ]); // Reset instructions when starting new game
     console.log("startSession");
     const { sessionId: player1SessionId, debugUrl: player1DebugUrl } =
       await startBBSSession();
@@ -56,10 +67,40 @@ export default function Connect4() {
     setPlayer1SessionId(player1SessionId);
     setPlayer2SessionId(player2SessionId);
     setTurn("setting up player 1");
+    setPlayerInstructions((prev) => [
+      ...prev,
+      {
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        instruction: "setting up player 1",
+      },
+    ]);
     const { url: gameUrl } = await readyPlayer1(player1SessionId, player1model);
     setTurn("setting up player 2");
+    setPlayerInstructions((prev) => [
+      ...prev,
+      {
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        instruction: "setting up player 2",
+      },
+    ]);
     await readyPlayer2(gameUrl, player2SessionId, player2model);
     setTurn("yellow getting turn...");
+    setPlayerInstructions((prev) => [
+      ...prev,
+      {
+        timestamp: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        instruction: "yellow getting turn...",
+      },
+    ]);
     await startGame(player1SessionId, player1model);
     while (true) {
       const yellowPlayerInstruction = await getMove(
@@ -67,8 +108,18 @@ export default function Connect4() {
         player1model,
         "yellow"
       );
-      setPlayerInstructions((prev) => [...prev, yellowPlayerInstruction]);
       setTurn("yellow executing turn...");
+      setPlayerInstructions((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          instruction: yellowPlayerInstruction,
+          screenshot: yellowScreenshot,
+        },
+      ]);
       const { screenshot: yellowScreenshot } = await makeMove(
         player1SessionId,
         "yellow",
@@ -88,13 +139,32 @@ export default function Connect4() {
         break;
       }
       setTurn("red getting turn...");
+      setPlayerInstructions((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          instruction: "red getting turn...",
+          screenshot: redScreenshot,
+        },
+      ]);
       const redPlayerInstruction = await getMove(
         player2SessionId,
         player2model,
         "red"
       );
-      setPlayerInstructions((prev) => [...prev, redPlayerInstruction]);
-      setTurn("red executing turn...");
+      setPlayerInstructions((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          instruction: "red executing turn...",
+        },
+      ]);
       const { screenshot: redScreenshot } = await makeMove(
         player2SessionId,
         "red",
@@ -114,6 +184,16 @@ export default function Connect4() {
         break;
       }
       setTurn("yellow getting turn...");
+      setPlayerInstructions((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          instruction: "yellow getting turn...",
+        },
+      ]);
     }
   }, [
     player1model,
@@ -133,38 +213,11 @@ export default function Connect4() {
   }, [isPlaying, startSession]);
 
   if (winner && winner !== "in progress") {
-    return <GameOver />;
+    return <GameOver winner={winner} playerInstructions={playerInstructions} />;
   }
 
-  return (
-    <div className="flex flex-col items-center w-full p-2 h-screen">
-      {turn && <HorizontalTurnStatus />}
-      {isPlaying ? (
-        <div className="not-last-of-type:bg-gray-100 rounded-lg w-full grid grid-cols-2 gap-2 p-2">
-          <div
-            className={cn(
-              "flex flex-col",
-              turn.includes("yellow") ? "bg-yellow-100" : "bg-gray-100"
-            )}
-          >
-            <div className="aspect-video">
-              <StagehandEmbed player="player1" title={player1model} />
-            </div>
-          </div>
-          <div
-            className={cn(
-              "flex flex-col",
-              turn.includes("red") ? "bg-red-100" : "bg-gray-100"
-            )}
-          >
-            <div className="aspect-video">
-              <StagehandEmbed player="player2" title={player2model} />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <ChooseModels />
-      )}
-    </div>
-  );
+  if (isPlaying) {
+    return <StreamLayout />;
+  }
+  return <ChooseModels />;
 }
