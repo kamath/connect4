@@ -10,6 +10,7 @@ import {
   player2modelAtom,
   player2sessionIdAtom,
   playerInstructionsAtom,
+  scoresAtom,
   screenshotAtom,
   turnAtom,
   winnerAtom,
@@ -27,6 +28,7 @@ import {
 import { startBBSSession } from "../main";
 import { ChooseModels } from "./components/chooseModels";
 import { StreamLayout } from "./components/stream-layout";
+import { Board } from "@/types";
 export default function Connect4() {
   const player1model = useAtomValue(player1modelAtom);
   const player2model = useAtomValue(player2modelAtom);
@@ -40,6 +42,7 @@ export default function Connect4() {
   const [playerInstructions, setPlayerInstructions] = useAtom(
     playerInstructionsAtom
   );
+  const setScores = useSetAtom(scoresAtom);
   const setScreenshot = useSetAtom(screenshotAtom);
   useEffect(() => {
     console.log(playerInstructions);
@@ -91,7 +94,9 @@ export default function Connect4() {
     await readyPlayer2(gameUrl, player2SessionId, player2model);
     setTurn("yellow getting turn...");
     await startGame(player1SessionId, player1model);
-    let redScreenshot: string | null = null;
+    let currentScreenshot: string | undefined = undefined;
+    let currentBoard: Board | undefined = undefined;
+    let currentScores: { red: number; yellow: number } | undefined = undefined;
     while (true) {
       const yellowPlayerInstruction = await getMove(
         player1SessionId,
@@ -107,14 +112,16 @@ export default function Connect4() {
             minute: "2-digit",
           }),
           instruction: yellowPlayerInstruction,
-          ...(redScreenshot
-            ? {
-                screenshot: redScreenshot,
-              }
-            : {}),
+          screenshot: currentScreenshot,
+          board: currentBoard,
+          scores: currentScores,
         },
       ]);
-      const { screenshot: yellowScreenshot } = await makeMove(
+      const {
+        screenshot: yellowScreenshot,
+        board: yellowBoard,
+        scores: yellowScores,
+      } = await makeMove(
         player1SessionId,
         "yellow",
         `Make move ${
@@ -124,6 +131,13 @@ export default function Connect4() {
         )}`
       );
       setScreenshot(yellowScreenshot);
+      currentScreenshot = yellowScreenshot;
+      currentBoard = yellowBoard;
+      currentScores = {
+        red: yellowScores.r,
+        yellow: yellowScores.y,
+      };
+      setScores(currentScores);
       const gameOverPlayer1 = await checkGameOver(
         player1SessionId,
         player1model
@@ -146,10 +160,16 @@ export default function Connect4() {
             minute: "2-digit",
           }),
           instruction: redPlayerInstruction,
-          screenshot: yellowScreenshot,
+          screenshot: currentScreenshot,
+          board: currentBoard,
+          scores: currentScores,
         },
       ]);
-      ({ screenshot: redScreenshot } = await makeMove(
+      const {
+        screenshot: redScreenshot,
+        board: redBoard,
+        scores: redScores,
+      } = await makeMove(
         player2SessionId,
         "red",
         `Make move ${
@@ -157,8 +177,15 @@ export default function Connect4() {
         } and these alternative moves: ${redPlayerInstruction.alternativeMoves.join(
           ", "
         )}`
-      ));
+      );
       setScreenshot(redScreenshot);
+      currentScreenshot = redScreenshot;
+      currentBoard = redBoard;
+      currentScores = {
+        red: redScores.r,
+        yellow: redScores.y,
+      };
+      setScores(currentScores);
       const gameOverPlayer2 = await checkGameOver(
         player2SessionId,
         player2model
@@ -180,6 +207,7 @@ export default function Connect4() {
     setTurn,
     setPlayerInstructions,
     setScreenshot,
+    setScores,
   ]);
 
   useEffect(() => {

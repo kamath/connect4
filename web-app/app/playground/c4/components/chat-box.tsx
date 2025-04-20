@@ -100,6 +100,28 @@ export function ChatBox({ className }: ChatBoxProps) {
                   </div>
                 )}
                 <div className="px-4 py-2.5 flex flex-col gap-4">
+                  <div className="text-sm">
+                    <span className="font-bold">Board before move:</span>
+                    <br />{" "}
+                    {step.board?.map((row, index) => {
+                      return (
+                        <div key={index}>
+                          {row
+                            .map((cell) => {
+                              switch (cell) {
+                                case "r":
+                                  return "🔴";
+                                case "y":
+                                  return "🟡";
+                                default:
+                                  return "⚫";
+                              }
+                            })
+                            .join(" ")}
+                        </div>
+                      );
+                    })}
+                  </div>
                   <p className="text-sm">
                     <span className="font-bold">Analysis:</span>{" "}
                     {instruction.analysis}
@@ -113,34 +135,36 @@ export function ChatBox({ className }: ChatBoxProps) {
             </div>
           );
         })}
-        <div className={`flex flex-col`}>
-          <div className="flex items-center mb-1">
-            <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              {new Date().toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </span>
-          </div>
+        {!winner && (
+          <div className={`flex flex-col`}>
+            <div className="flex items-center mb-1">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                {new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
 
-          <div
-            className={cn(
-              "max-w-[85%] w-fit rounded-2xl overflow-hidden rounded-tl-sm",
-              playerInstructions.length > 0 &&
-                (turn.includes("getting turn") ||
-                  turn.includes("executing turn"))
-                ? turn === "yellow getting turn..." ||
-                  turn === "yellow executing turn..."
-                  ? "bg-yellow-500 text-zinc-900"
-                  : "bg-red-500 text-white"
-                : "bg-zinc-200 dark:bg-zinc-700"
-            )}
-          >
-            <div className="px-4 py-2.5 w-fit">
-              <div className="loading-dots" />
+            <div
+              className={cn(
+                "max-w-[85%] w-fit rounded-2xl overflow-hidden rounded-tl-sm",
+                playerInstructions.length > 0 &&
+                  (turn.includes("getting turn") ||
+                    turn.includes("executing turn"))
+                  ? turn === "yellow getting turn..." ||
+                    turn === "yellow executing turn..."
+                    ? "bg-yellow-500 text-zinc-900"
+                    : "bg-red-500 text-white"
+                  : "bg-zinc-200 dark:bg-zinc-700"
+              )}
+            >
+              <div className="px-4 py-2.5 w-fit">
+                <div className="loading-dots" />
+              </div>
             </div>
           </div>
-        </div>
+        )}
         {winner && (
           <div className={`flex flex-col`}>
             <div className="flex items-center mb-1">

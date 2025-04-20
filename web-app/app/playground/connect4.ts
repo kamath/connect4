@@ -1,6 +1,6 @@
 "use server";
 
-import { Stagehand } from "@browserbasehq/stagehand";
+import { Page, Stagehand } from "@browserbasehq/stagehand";
 import { initFromSessionId } from "./main";
 import { generateObject, LanguageModel } from "ai";
 import { CoreMessage } from "ai";
@@ -8,24 +8,20 @@ import { getModel } from "./utils";
 import { z } from "zod";
 import { Connect4Instruction } from "@/types";
 import { google } from "@ai-sdk/google";
+// import { getPlayerScores } from "./minimax";
+import { estimateWinProbabilities } from "./mcts";
 
 export async function readyPlayer1(sessionId: string, model: string) {
   const stagehand = await initFromSessionId(sessionId, model);
   const page = stagehand.page;
   await page.goto("https://buddyboardgames.com/connect4");
-  await page.act({
-    action: "type %name% in the name field",
-    variables: {
-      name: model.replace(/[^a-zA-Z0-9]/g, ""),
-    },
-  });
+  await page.act(
+    `Type '${model.replace(/[^a-zA-Z0-9]/g, "")}' in the name field`
+  );
 
-  await page.act({
-    action: "Type %roomname% in the room name field",
-    variables: {
-      roomname: `stagehand-${crypto.randomUUID()}`,
-    },
-  });
+  await page.act(
+    `Type 'stagehand-${crypto.randomUUID()}' in the room name field`
+  );
 
   await page.act("click the play button");
   return {
@@ -41,12 +37,9 @@ export async function readyPlayer2(
   const stagehand = await initFromSessionId(sessionId, model);
   const page = stagehand.page;
   await page.goto(url);
-  await page.act({
-    action: "type %name% in the name field",
-    variables: {
-      name: model.replace(/[^a-zA-Z0-9]/g, ""),
-    },
-  });
+  await page.act(
+    `Type '${model.replace(/[^a-zA-Z0-9]/g, "")}' in the name field`
+  );
 
   await page.act("click the play button");
 }
@@ -129,13 +122,52 @@ export async function checkGameOver(sessionId: string, model: string) {
   return winner;
 }
 
+export async function getBoard(page: Page) {
+  const board = await page.evaluate(() => {
+    function getBoardState() {
+      const boardElement = document.getElementById("board");
+      const rows = 6;
+      const cols = 7;
+
+      // Initialize the board with 'o' (empty)
+      const board = Array.from({ length: rows }, () => Array(cols).fill("o"));
+
+      if (!boardElement) return board;
+
+      const cells = boardElement.querySelectorAll(".cell");
+
+      cells.forEach((cell) => {
+        const rowIdx = parseInt(cell.getAttribute("rowidx") || "");
+        const colIdx = parseInt(cell.getAttribute("colidx") || "");
+
+        if (!isNaN(rowIdx) && !isNaN(colIdx)) {
+          const piece = cell.querySelector(".piece");
+          if (piece) {
+            const classList = piece.classList;
+            if (classList.contains("black")) {
+              board[rowIdx][colIdx] = "y"; // black = yellow
+            } else {
+              board[rowIdx][colIdx] = "r"; // white = red
+            }
+          }
+        }
+      });
+
+      return board;
+    }
+    return getBoardState();
+  });
+  return board;
+}
+
 export async function getMove(
   sessionId: string,
   model: string,
   player: "yellow" | "red"
 ) {
-  const client = getModel(model);
+  // Get current board state
   const stagehandPlayer = await initFromSessionId(sessionId, model);
+  const client = getModel(model);
   const instruction = await getPlayerInstructions(
     stagehandPlayer,
     player,
@@ -176,5 +208,12 @@ export async function makeMove(
 
   // Get screenshot after move
   const screenshot = await getScreenshot(sessionId, "google/gemini-2.0-flash");
-  return { screenshot };
+  const board = await getBoard(stagehandPlayer.page);
+  //   const scores = getPlayerScores(board);
+  const scores = await estimateWinProbabilities(
+    board,
+    player === "yellow" ? "r" : "y",
+    10000
+  );
+  return { screenshot, board, scores };
 }
