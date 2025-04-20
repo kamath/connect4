@@ -1,18 +1,22 @@
 "use client";
 
-import { useAtom } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import {
+  isPlayingAtom,
   player1debugUrlAtom,
   player1modelAtom,
   player1sessionIdAtom,
   player2debugUrlAtom,
   player2modelAtom,
   player2sessionIdAtom,
+  playerInstructionsAtom,
+  screenshotAtom,
   turnAtom,
-} from "@/atoms";
+  winnerAtom,
+} from "./atoms";
 import { StagehandEmbed } from "../components/stagehand/stagehandEmbed";
 import { useSetAtom } from "jotai";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect } from "react";
 import {
   checkGameOver,
   getMove,
@@ -22,51 +26,24 @@ import {
   startGame,
 } from "../connect4";
 import { startBBSSession } from "../main";
-import { MemoizedMarkdown } from "../components/memoized-markdown";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-
-import { Connect4Instruction } from "@/types";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import Image from "next/image";
+import { ChooseModels } from "../components/stagehand/chooseModels";
+import { GameOver } from "../components/stagehand/gameOver";
+import { HorizontalTurnStatus } from "./components/horizontalTurnStatus";
 export default function Connect4() {
-  const [player1model, setPlayer1model] = useAtom(player1modelAtom);
-  const [player2model, setPlayer2model] = useAtom(player2modelAtom);
+  const player1model = useAtomValue(player1modelAtom);
+  const player2model = useAtomValue(player2modelAtom);
   const setPlayer2debugUrl = useSetAtom(player2debugUrlAtom);
   const setPlayer1SessionId = useSetAtom(player1sessionIdAtom);
   const setPlayer2SessionId = useSetAtom(player2sessionIdAtom);
   const setPlayer1debugUrl = useSetAtom(player1debugUrlAtom);
-  const [winner, setWinner] = useState<
-    "yellow wins" | "red wins" | "tie" | "in progress"
-  >("in progress");
+  const [winner, setWinner] = useAtom(winnerAtom);
   const [turn, setTurn] = useAtom(turnAtom);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [playerInstructions, setPlayerInstructions] = useState<
-    Connect4Instruction[]
-  >([]);
-  const [instructionIndex, setInstructionIndex] = useState(0);
-  const [screenshot, setScreenshot] = useState<string | null>(null);
+  const isPlaying = useAtomValue(isPlayingAtom);
+  const setPlayerInstructions = useSetAtom(playerInstructionsAtom);
+  const setScreenshot = useSetAtom(screenshotAtom);
 
   const startSession = useCallback(async () => {
-    if (player1model === player2model) {
-      setTurn("error: models can't be the same");
-      return;
-    }
-    setIsPlaying(true);
     setTurn("starting up...");
     setPlayerInstructions([]); // Reset instructions when starting new game
     console.log("startSession");
@@ -147,102 +124,21 @@ export default function Connect4() {
     setPlayer2SessionId,
     setWinner,
     setTurn,
+    setPlayerInstructions,
+    setScreenshot,
   ]);
 
-  if (winner !== "in progress") {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen w-full p-8">
-        <h1 className="text-2xl font-bold">Game Over - {winner}!</h1>
-        <Card>
-          <CardHeader>
-            <CardTitle>{playerInstructions[instructionIndex].turn}</CardTitle>
-            <CardDescription>
-              {playerInstructions[instructionIndex].analysis}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p>{playerInstructions[instructionIndex].bestMove}</p>
-            <p>
-              {playerInstructions[instructionIndex].alternativeMoves.join(", ")}
-            </p>
-          </CardContent>
-          <CardFooter>
-            {instructionIndex > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => setInstructionIndex(instructionIndex - 1)}
-              >
-                Previous
-              </Button>
-            )}
-            {instructionIndex < playerInstructions.length - 1 && (
-              <Button onClick={() => setInstructionIndex(instructionIndex + 1)}>
-                Next
-              </Button>
-            )}
-          </CardFooter>
-        </Card>
-      </div>
-    );
+  useEffect(() => {
+    if (isPlaying) startSession();
+  }, [isPlaying, startSession]);
+
+  if (winner && winner !== "in progress") {
+    return <GameOver />;
   }
 
   return (
     <div className="flex flex-col items-center w-full p-2 h-screen">
-      {turn && (
-        <div className="h-full flex-1 overflow-auto not-last-of-type:bg-gray-100 rounded-lg w-full grid grid-cols-2 gap-2 p-2">
-          {turn.includes("red") && <div />}
-          <div className="flex items-center justify-center h-full flex-grow">
-            {isPlaying && (
-              <div
-                className={`w-full max-w-2xl p-4 rounded-lg mb-4 ${
-                  turn.includes("yellow")
-                    ? "bg-yellow-100"
-                    : turn.includes("red")
-                    ? "bg-red-100"
-                    : "bg-gray-100"
-                }`}
-              >
-                <h1 className="text-lg font-bold mb-2">{turn}</h1>
-                {turn.includes("turn") && (
-                  <MemoizedMarkdown
-                    content={
-                      turn.includes("getting turn")
-                        ? "Waiting for move..."
-                        : turn.includes("yellow")
-                        ? `**Analysis:** ${
-                            playerInstructions[playerInstructions.length - 1]
-                              ?.analysis
-                          }
-                          \n\n**Best move:** ${
-                            playerInstructions[playerInstructions.length - 1]
-                              ?.bestMove
-                          }` || "No move yet"
-                        : `**Analysis:** ${
-                            playerInstructions[playerInstructions.length - 1]
-                              ?.analysis
-                          }
-                          \n\n**Best move:** ${
-                            playerInstructions[playerInstructions.length - 1]
-                              ?.bestMove
-                          }` || "No move yet"
-                    }
-                    id={turn}
-                  />
-                )}
-                {screenshot && (
-                  <Image
-                    src={`data:image/png;base64,${screenshot}`}
-                    alt="Game board"
-                    className="mb-4 rounded-lg"
-                    width={1000}
-                    height={1000}
-                  />
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {turn && <HorizontalTurnStatus />}
       {isPlaying ? (
         <div className="not-last-of-type:bg-gray-100 rounded-lg w-full grid grid-cols-2 gap-2 p-2">
           <div
@@ -267,82 +163,7 @@ export default function Connect4() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center h-screen w-full p-8">
-          {turn === "error: models can't be the same" && (
-            <div className="p-8">
-              <h1 className="text-2xl font-bold">
-                Error - Use different models for each player
-              </h1>
-            </div>
-          )}
-          <p className="text-lg">Player 1</p>
-          <Select
-            value={player1model}
-            onValueChange={(value) => setPlayer1model(value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a model" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="google/gemini-2.0-flash">
-                Gemini 2.0 Flash
-              </SelectItem>
-              <SelectItem value="google/gemini-2.5-flash-preview-04-17">
-                Gemini 2.5 Flash Preview
-              </SelectItem>
-              <SelectItem value="openai/gpt-4o">GPT-4o</SelectItem>
-              <SelectItem value="openai/gpt-4o-mini">GPT-4o Mini</SelectItem>
-              <SelectItem value="openai/o3-mini">O3 Mini</SelectItem>
-              <SelectItem value="openai/o4-mini">O4 Mini</SelectItem>
-              <SelectItem value="openai/gpt-4.1">GPT-4.1</SelectItem>
-              <SelectItem value="openai/gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
-              <SelectItem value="openai/gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
-              <SelectItem value="anthropic/claude-3-5-sonnet-latest">
-                Claude 3.5 Sonnet
-              </SelectItem>
-              <SelectItem value="anthropic/claude-3-7-sonnet-latest">
-                Claude 3.7 Sonnet
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <p className="text-sm">vs</p>
-          <p className="text-lg">Player 2</p>
-          <Select
-            value={player2model}
-            onValueChange={(value) => setPlayer2model(value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a model" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="google/gemini-2.0-flash">
-                Gemini 2.0 Flash
-              </SelectItem>
-              <SelectItem value="google/gemini-2.5-flash-preview-04-17">
-                Gemini 2.5 Flash Preview
-              </SelectItem>
-              <SelectItem value="openai/gpt-4o">GPT-4o</SelectItem>
-              <SelectItem value="openai/gpt-4o-mini">GPT-4o Mini</SelectItem>
-              <SelectItem value="openai/o3-mini">O3 Mini</SelectItem>
-              <SelectItem value="openai/o4-mini">O4 Mini</SelectItem>
-              <SelectItem value="openai/gpt-4.1">GPT-4.1</SelectItem>
-              <SelectItem value="openai/gpt-4.1-mini">GPT-4.1 Mini</SelectItem>
-              <SelectItem value="openai/gpt-4.1-nano">GPT-4.1 Nano</SelectItem>
-              <SelectItem value="anthropic/claude-3-5-sonnet-latest">
-                Claude 3.5 Sonnet
-              </SelectItem>
-              <SelectItem value="anthropic/claude-3-7-sonnet-latest">
-                Claude 3.7 Sonnet
-              </SelectItem>
-            </SelectContent>
-          </Select>
-          <button
-            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors mt-8"
-            onClick={startSession}
-          >
-            Start Session
-          </button>
-        </div>
+        <ChooseModels />
       )}
     </div>
   );

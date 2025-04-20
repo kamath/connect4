@@ -1,4 +1,5 @@
 import { atom } from "jotai";
+import { Connect4Instruction } from "@/types";
 
 export const player1sessionIdAtom = atom<string | null>(null);
 export const player2sessionIdAtom = atom<string | null>(null);
@@ -22,3 +23,8 @@ export const turnAtom = atom<
   | "yellow win"
   | "red win"
 >("press start");
+export const isPlayingAtom = atom(false);
+
+export const playerInstructionsAtom = atom<Connect4Instruction[]>([]);
+export const instructionIndexAtom = atom(0);
+export const screenshotAtom = atom<string | null>(null);
