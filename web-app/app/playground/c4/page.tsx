@@ -109,6 +109,16 @@ export default function Connect4() {
         "yellow"
       );
       setTurn("yellow executing turn...");
+      const { screenshot: yellowScreenshot } = await makeMove(
+        player1SessionId,
+        "yellow",
+        `Make move ${
+          yellowPlayerInstruction.bestMove
+        } and these alternative moves: ${yellowPlayerInstruction.alternativeMoves.join(
+          ", "
+        )}`
+      );
+      setScreenshot(yellowScreenshot);
       setPlayerInstructions((prev) => [
         ...prev,
         {
@@ -120,16 +130,6 @@ export default function Connect4() {
           screenshot: yellowScreenshot,
         },
       ]);
-      const { screenshot: yellowScreenshot } = await makeMove(
-        player1SessionId,
-        "yellow",
-        `Make move ${
-          yellowPlayerInstruction.bestMove
-        } and these alternative moves: ${yellowPlayerInstruction.alternativeMoves.join(
-          ", "
-        )}`
-      );
-      setScreenshot(yellowScreenshot);
       const gameOverPlayer1 = await checkGameOver(
         player1SessionId,
         player1model
@@ -139,17 +139,6 @@ export default function Connect4() {
         break;
       }
       setTurn("red getting turn...");
-      setPlayerInstructions((prev) => [
-        ...prev,
-        {
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          instruction: "red getting turn...",
-          screenshot: redScreenshot,
-        },
-      ]);
       const redPlayerInstruction = await getMove(
         player2SessionId,
         player2model,
@@ -175,6 +164,17 @@ export default function Connect4() {
         )}`
       );
       setScreenshot(redScreenshot);
+      setPlayerInstructions((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          instruction: "red getting turn...",
+          screenshot: redScreenshot,
+        },
+      ]);
       const gameOverPlayer2 = await checkGameOver(
         player2SessionId,
         player2model

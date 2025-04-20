@@ -1,10 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useAtomValue } from "jotai";
 import { useEffect, useRef } from "react";
 import { playerInstructionsAtom } from "../atoms";
-
+import "./loadingDots.css";
 interface ChatBoxProps {
   className?: string;
 }
@@ -50,10 +51,8 @@ export function ChatBox({ className }: ChatBoxProps) {
               </div>
             );
           }
+
           const instruction = step.instruction;
-          let player: "red" | "yellow" | "neutral" = "neutral";
-          if (instruction.turn === "red") player = "red";
-          if (instruction.turn === "yellow") player = "yellow";
           return (
             <div key={index} className={`flex flex-col`}>
               <div className="flex items-center mb-1">
@@ -72,26 +71,55 @@ export function ChatBox({ className }: ChatBoxProps) {
                 className={`
                   max-w-[85%] rounded-2xl overflow-hidden
                   ${
-                    player === "red"
+                    instruction.turn === "red"
                       ? "bg-red-500 text-white rounded-tl-sm"
-                      : player === "yellow"
-                      ? "bg-yellow-500 text-zinc-900 rounded-tl-sm"
-                      : "bg-zinc-200 dark:bg-zinc-700 rounded-tl-sm"
+                      : "bg-yellow-500 text-zinc-900 rounded-tl-sm"
                   }
                 `}
               >
                 {true && (
-                  <div className="w-full aspect-square bg-zinc-200 dark:bg-zinc-700 border-b border-zinc-300 dark:border-zinc-600">
-                    {/* Screenshot placeholder */}
+                  <div className="w-full bg-zinc-200 dark:bg-zinc-700 border-b border-zinc-300 dark:border-zinc-600">
+                    <Image
+                      src={`data:image/png;base64,${step.screenshot}`}
+                      alt="Game board"
+                      className="mb-0 rounded-lg"
+                      width={1000}
+                      height={10}
+                    />
                   </div>
                 )}
-                <div className="px-4 py-2.5">
-                  <p className="text-sm">{instruction.analysis}</p>
+                <div className="px-4 py-2.5 flex flex-col gap-4">
+                  <p className="text-sm">
+                    <span className="font-bold">Analysis:</span>{" "}
+                    {instruction.analysis}
+                  </p>
+                  <p className="text-sm">
+                    <span className="font-bold">Best move:</span>{" "}
+                    {instruction.bestMove}
+                  </p>
                 </div>
               </div>
             </div>
           );
         })}
+        <div className={`flex flex-col`}>
+          <div className="flex items-center mb-1">
+            <span className="text-xs text-zinc-500 dark:text-zinc-400">
+              {new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </span>
+          </div>
+
+          <div
+            className={`max-w-[85%] w-fit rounded-2xl overflow-hidden bg-zinc-200 dark:bg-zinc-700 rounded-tl-sm`}
+          >
+            <div className="px-4 py-2.5 w-fit">
+              <div className="loading-dots" />
+            </div>
+          </div>
+        </div>
         <div ref={messagesEndRef} />
       </div>
     </div>

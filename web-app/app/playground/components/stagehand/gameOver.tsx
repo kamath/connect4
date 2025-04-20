@@ -7,7 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Connect4Instruction, StatusUpdate } from "@/types";
 
 export const GameOver = ({
@@ -18,29 +18,32 @@ export const GameOver = ({
   playerInstructions: StatusUpdate[];
 }) => {
   const [instructionIndex, setInstructionIndex] = useState(0);
-  const currentInstruction: Connect4Instruction = playerInstructions[
-    instructionIndex
-  ].instruction as Connect4Instruction;
-  useEffect(() => {
-    if (typeof currentInstruction.turn === "string") {
-      if (instructionIndex == playerInstructions.length - 1) {
-        setInstructionIndex(0);
-      } else {
-        setInstructionIndex(instructionIndex + 1);
-      }
-    }
-  }, [currentInstruction, instructionIndex, playerInstructions]);
+  const currentInstruction: StatusUpdate = playerInstructions[instructionIndex];
   return (
     <div className="flex flex-col items-center justify-center h-screen w-full p-8">
       <h1 className="text-2xl font-bold">Game Over - {winner}!</h1>
       <Card>
         <CardHeader>
-          <CardTitle>{currentInstruction.turn}</CardTitle>
-          <CardDescription>{currentInstruction.analysis}</CardDescription>
+          <CardTitle>
+            {typeof currentInstruction.instruction === "object" &&
+              (currentInstruction.instruction as Connect4Instruction).turn}
+          </CardTitle>
+          <CardDescription>
+            {typeof currentInstruction.instruction === "object" &&
+              (currentInstruction.instruction as Connect4Instruction).analysis}
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          <p>{currentInstruction.bestMove}</p>
-          <p>{currentInstruction.alternativeMoves.join(", ")}</p>
+          <p>
+            {typeof currentInstruction.instruction === "object" &&
+              (currentInstruction.instruction as Connect4Instruction).bestMove}
+          </p>
+          <p>
+            {typeof currentInstruction.instruction === "object" &&
+              (
+                currentInstruction.instruction as Connect4Instruction
+              ).alternativeMoves.join(", ")}
+          </p>
         </CardContent>
         <CardFooter>
           {instructionIndex > 0 && (
