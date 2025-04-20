@@ -1,24 +1,19 @@
-import { User } from "lucide-react";
+import { useAtomValue } from "jotai";
+import { player1debugUrlAtom } from "../atoms";
+import { StagehandEmbed } from "../../components/stagehand/stagehandEmbed";
 
 interface VideoStreamProps {
   playerName: string;
-  streamId: string;
   className?: string;
 }
 
-export function VideoStream({
-  playerName,
-  streamId,
-  className,
-}: VideoStreamProps) {
+export function VideoStream({ playerName, className }: VideoStreamProps) {
+  const debugUrl = useAtomValue(player1debugUrlAtom);
   return (
     <div className={`relative w-full ${className}`}>
       <div className="absolute inset-0 bg-zinc-100 dark:bg-zinc-800 rounded-xl overflow-hidden shadow-sm">
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-zinc-400 flex flex-col items-center">
-            <User size={48} strokeWidth={1.5} />
-            <p className="mt-2 text-sm font-light">AI agent playing checkers</p>
-          </div>
+          <StagehandEmbed debugUrl={debugUrl} title={playerName} />
         </div>
 
         {/* Player info overlay */}

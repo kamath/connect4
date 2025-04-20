@@ -148,7 +148,7 @@ export default function Connect4() {
             )}
           >
             <div className="aspect-video">
-              <StagehandEmbed player="player1" title={player1model} />
+              <StagehandEmbed debugUrl={player1debugUrl} title={player1model} />
             </div>
           </div>
           <div
@@ -158,7 +158,7 @@ export default function Connect4() {
             )}
           >
             <div className="aspect-video">
-              <StagehandEmbed player="player2" title={player2model} />
+              <StagehandEmbed debugUrl={player2debugUrl} title={player2model} />
             </div>
           </div>
         </div>

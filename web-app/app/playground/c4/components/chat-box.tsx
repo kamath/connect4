@@ -4,8 +4,15 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useAtomValue } from "jotai";
 import { useEffect, useRef } from "react";
-import { playerInstructionsAtom } from "../atoms";
+import {
+  player1modelAtom,
+  player2modelAtom,
+  playerInstructionsAtom,
+  turnAtom,
+  winnerAtom,
+} from "../atoms";
 import "./loadingDots.css";
+
 interface ChatBoxProps {
   className?: string;
 }
@@ -13,6 +20,10 @@ interface ChatBoxProps {
 export function ChatBox({ className }: ChatBoxProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const playerInstructions = useAtomValue(playerInstructionsAtom);
+  const player1Model = useAtomValue(player1modelAtom);
+  const player2Model = useAtomValue(player2modelAtom);
+  const turn = useAtomValue(turnAtom);
+  const winner = useAtomValue(winnerAtom);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -57,7 +68,7 @@ export function ChatBox({ className }: ChatBoxProps) {
             <div key={index} className={`flex flex-col`}>
               <div className="flex items-center mb-1">
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {instruction.turn}
+                  {instruction.turn === "yellow" ? player1Model : player2Model}
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2">
                   {new Date().toLocaleTimeString([], {
@@ -77,7 +88,7 @@ export function ChatBox({ className }: ChatBoxProps) {
                   }
                 `}
               >
-                {true && (
+                {step.screenshot && (
                   <div className="w-full bg-zinc-200 dark:bg-zinc-700 border-b border-zinc-300 dark:border-zinc-600">
                     <Image
                       src={`data:image/png;base64,${step.screenshot}`}
@@ -113,13 +124,44 @@ export function ChatBox({ className }: ChatBoxProps) {
           </div>
 
           <div
-            className={`max-w-[85%] w-fit rounded-2xl overflow-hidden bg-zinc-200 dark:bg-zinc-700 rounded-tl-sm`}
+            className={cn(
+              "max-w-[85%] w-fit rounded-2xl overflow-hidden rounded-tl-sm",
+              playerInstructions.length > 0 &&
+                (turn.includes("getting turn") ||
+                  turn.includes("executing turn"))
+                ? turn === "yellow getting turn..." ||
+                  turn === "yellow executing turn..."
+                  ? "bg-yellow-500 text-zinc-900"
+                  : "bg-red-500 text-white"
+                : "bg-zinc-200 dark:bg-zinc-700"
+            )}
           >
             <div className="px-4 py-2.5 w-fit">
               <div className="loading-dots" />
             </div>
           </div>
         </div>
+        {winner && (
+          <div className={`flex flex-col`}>
+            <div className="flex items-center mb-1">
+              <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                {new Date().toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+              </span>
+            </div>
+
+            <div
+              className={`
+			  max-w-[85%] rounded-2xl overflow-hidden bg-zinc-200 dark:bg-zinc-700 rounded-tl-sm`}
+            >
+              <div className="px-4 py-2.5">
+                <p className="text-sm">{winner}</p>
+              </div>
+            </div>
+          </div>
+        )}
         <div ref={messagesEndRef} />
       </div>
     </div>

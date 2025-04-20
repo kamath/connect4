@@ -99,7 +99,7 @@ async function getPlayerInstructions(
   });
 
   return {
-    turn: `${player} player turn`,
+    turn: player,
     analysis: instruction.analysis,
     bestMove: instruction.bestMove,
     alternativeMoves: instruction.alternativeMoves,

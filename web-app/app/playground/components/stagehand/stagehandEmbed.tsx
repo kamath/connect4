@@ -4,7 +4,6 @@ import { Loader2 } from "lucide-react";
 
 export function StagehandEmbed({
   debugUrl,
-  title,
 }: {
   debugUrl: string | null;
   title: string;
@@ -12,9 +11,8 @@ export function StagehandEmbed({
   return (
     <div className="w-full h-full flex items-center justify-center flex-col">
       <div className="w-full h-full flex flex-col items-center justify-center">
-        <div className="text-center">{title}</div>
         {debugUrl ? (
-          <iframe src={debugUrl} className="w-full aspect-[1.3333]" />
+          <iframe src={debugUrl} className="w-full h-full" />
         ) : (
           <div className="flex items-center justify-center h-full">
             <button className="bg-red-500 font-bold text-white px-4 py-2 rounded-md flex items-center justify-center">

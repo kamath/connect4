@@ -26,7 +26,6 @@ import {
 } from "../connect4";
 import { startBBSSession } from "../main";
 import { ChooseModels } from "./components/chooseModels";
-import { GameOver } from "../components/stagehand/gameOver";
 import { StreamLayout } from "./components/stream-layout";
 export default function Connect4() {
   const player1model = useAtomValue(player1modelAtom);
@@ -35,7 +34,7 @@ export default function Connect4() {
   const setPlayer2SessionId = useSetAtom(player2sessionIdAtom);
   const setPlayer1debugUrl = useSetAtom(player1debugUrlAtom);
   const setPlayer2debugUrl = useSetAtom(player2debugUrlAtom);
-  const [winner, setWinner] = useAtom(winnerAtom);
+  const setWinner = useSetAtom(winnerAtom);
   const setTurn = useSetAtom(turnAtom);
   const isPlaying = useAtomValue(isPlayingAtom);
   const [playerInstructions, setPlayerInstructions] = useAtom(
@@ -91,17 +90,8 @@ export default function Connect4() {
     ]);
     await readyPlayer2(gameUrl, player2SessionId, player2model);
     setTurn("yellow getting turn...");
-    setPlayerInstructions((prev) => [
-      ...prev,
-      {
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-        instruction: "yellow getting turn...",
-      },
-    ]);
     await startGame(player1SessionId, player1model);
+    let redScreenshot: string | null = null;
     while (true) {
       const yellowPlayerInstruction = await getMove(
         player1SessionId,
@@ -109,6 +99,21 @@ export default function Connect4() {
         "yellow"
       );
       setTurn("yellow executing turn...");
+      setPlayerInstructions((prev) => [
+        ...prev,
+        {
+          timestamp: new Date().toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          instruction: yellowPlayerInstruction,
+          ...(redScreenshot
+            ? {
+                screenshot: redScreenshot,
+              }
+            : {}),
+        },
+      ]);
       const { screenshot: yellowScreenshot } = await makeMove(
         player1SessionId,
         "yellow",
@@ -119,17 +124,6 @@ export default function Connect4() {
         )}`
       );
       setScreenshot(yellowScreenshot);
-      setPlayerInstructions((prev) => [
-        ...prev,
-        {
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          instruction: yellowPlayerInstruction,
-          screenshot: yellowScreenshot,
-        },
-      ]);
       const gameOverPlayer1 = await checkGameOver(
         player1SessionId,
         player1model
@@ -151,10 +145,11 @@ export default function Connect4() {
             hour: "2-digit",
             minute: "2-digit",
           }),
-          instruction: "red executing turn...",
+          instruction: redPlayerInstruction,
+          screenshot: yellowScreenshot,
         },
       ]);
-      const { screenshot: redScreenshot } = await makeMove(
+      ({ screenshot: redScreenshot } = await makeMove(
         player2SessionId,
         "red",
         `Make move ${
@@ -162,19 +157,8 @@ export default function Connect4() {
         } and these alternative moves: ${redPlayerInstruction.alternativeMoves.join(
           ", "
         )}`
-      );
+      ));
       setScreenshot(redScreenshot);
-      setPlayerInstructions((prev) => [
-        ...prev,
-        {
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          instruction: "red getting turn...",
-          screenshot: redScreenshot,
-        },
-      ]);
       const gameOverPlayer2 = await checkGameOver(
         player2SessionId,
         player2model
@@ -184,16 +168,6 @@ export default function Connect4() {
         break;
       }
       setTurn("yellow getting turn...");
-      setPlayerInstructions((prev) => [
-        ...prev,
-        {
-          timestamp: new Date().toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          instruction: "yellow getting turn...",
-        },
-      ]);
     }
   }, [
     player1model,
@@ -212,9 +186,9 @@ export default function Connect4() {
     if (isPlaying) startSession();
   }, [isPlaying, startSession]);
 
-  if (winner && winner !== "in progress") {
-    return <GameOver winner={winner} playerInstructions={playerInstructions} />;
-  }
+  //   if (winner && winner !== "in progress") {
+  //     return <GameOver winner={winner} playerInstructions={playerInstructions} />;
+  //   }
 
   if (isPlaying) {
     return <StreamLayout />;
