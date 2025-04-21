@@ -34,3 +34,4 @@ export const scoresAtom = atom<{
   redDiff: number;
   yellowDiff: number;
 } | null>(null);
+export const activePlayerAtom = atom<"red" | "yellow">("yellow");

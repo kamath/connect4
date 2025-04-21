@@ -122,13 +122,20 @@ export function ChatBox({ className }: ChatBoxProps) {
                   {instruction.turn === "yellow" ? player1Model : player2Model}
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {instruction.llmTelemetry.totalTokens} Total Tokens @{" "}
+                  {instruction.llmTelemetry.totalTokens.toLocaleString()} tokens
+                  {" in "}
+                  {instruction.llmTelemetry.totalInferenceMs
+                    .toFixed(2)
+                    .toLocaleString()}
+                  ms (
                   {(
                     (instruction.llmTelemetry.totalTokens /
                       instruction.llmTelemetry.totalInferenceMs) *
                     1000
-                  ).toFixed(2)}{" "}
-                  tokens/s
+                  )
+                    .toFixed(2)
+                    .toLocaleString()}{" "}
+                  t/s)
                 </span>
               </div>
             </div>

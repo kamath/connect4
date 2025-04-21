@@ -2,6 +2,7 @@
 
 import { useAtom, useAtomValue } from "jotai";
 import {
+  activePlayerAtom,
   isPlayingAtom,
   player1debugUrlAtom,
   player1modelAtom,
@@ -38,6 +39,7 @@ export default function Connect4() {
   const setPlayer2debugUrl = useSetAtom(player2debugUrlAtom);
   const setWinner = useSetAtom(winnerAtom);
   const setTurn = useSetAtom(turnAtom);
+  const setActivePlayer = useSetAtom(activePlayerAtom);
   const isPlaying = useAtomValue(isPlayingAtom);
   const [playerInstructions, setPlayerInstructions] = useAtom(
     playerInstructionsAtom
@@ -68,6 +70,7 @@ export default function Connect4() {
     setPlayer2debugUrl(player2DebugUrl);
     setPlayer1SessionId(player1SessionId);
     setPlayer2SessionId(player2SessionId);
+    setActivePlayer("yellow");
     setTurn("setting up player 1");
     setPlayerInstructions((prev) => [
       ...prev,
@@ -80,6 +83,7 @@ export default function Connect4() {
       },
     ]);
     const { url: gameUrl } = await readyPlayer1(player1SessionId, player1model);
+    setActivePlayer("red");
     setTurn("setting up player 2");
     setPlayerInstructions((prev) => [
       ...prev,
@@ -92,6 +96,7 @@ export default function Connect4() {
       },
     ]);
     await readyPlayer2(gameUrl, player2SessionId, player2model);
+    setActivePlayer("yellow");
     setTurn("yellow getting turn...");
     await startGame(player1SessionId, player1model);
     let currentScreenshot: string | undefined = undefined;
@@ -157,6 +162,7 @@ export default function Connect4() {
         setWinner("yellow wins");
         break;
       }
+      setActivePlayer("red");
       setTurn("red getting turn...");
       const {
         playerInstruction: redPlayerInstruction,
@@ -217,6 +223,7 @@ export default function Connect4() {
         setWinner("red wins");
         break;
       }
+      setActivePlayer("yellow");
       setTurn("yellow getting turn...");
     }
   }, [
@@ -231,6 +238,7 @@ export default function Connect4() {
     setPlayerInstructions,
     setScreenshot,
     setScores,
+    setActivePlayer,
   ]);
 
   useEffect(() => {
