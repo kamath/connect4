@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { useAtomValue } from "jotai";
 import { useEffect, useRef } from "react";
@@ -83,22 +82,11 @@ export function ChatBox({ className }: ChatBoxProps) {
                   max-w-[85%] rounded-2xl overflow-hidden
                   ${
                     instruction.turn === "red"
-                      ? "bg-red-500 text-white rounded-tl-sm"
-                      : "bg-yellow-500 text-zinc-900 rounded-tl-sm"
+                      ? "bg-red-500/10 text-zinc-900 rounded-tl-sm"
+                      : "bg-yellow-500/10 text-zinc-900 rounded-tl-sm"
                   }
                 `}
               >
-                {step.screenshot && (
-                  <div className="w-full bg-zinc-200 dark:bg-zinc-700 border-b border-zinc-300 dark:border-zinc-600">
-                    <Image
-                      src={`data:image/png;base64,${step.screenshot}`}
-                      alt="Game board"
-                      className="mb-0 rounded-lg"
-                      width={1000}
-                      height={10}
-                    />
-                  </div>
-                )}
                 <div className="px-4 py-2.5 flex flex-col gap-4">
                   <div className="text-sm">
                     <span className="font-bold">Board before move:</span>
@@ -154,8 +142,8 @@ export function ChatBox({ className }: ChatBoxProps) {
                     turn.includes("executing turn"))
                   ? turn === "yellow getting turn..." ||
                     turn === "yellow executing turn..."
-                    ? "bg-yellow-500 text-zinc-900"
-                    : "bg-red-500 text-white"
+                    ? "bg-yellow-500/10 text-zinc-900"
+                    : "bg-red-500/10 text-zinc-900"
                   : "bg-zinc-200 dark:bg-zinc-700"
               )}
             >

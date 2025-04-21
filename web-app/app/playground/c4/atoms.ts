@@ -28,4 +28,9 @@ export const isPlayingAtom = atom(false);
 export const playerInstructionsAtom = atom<StatusUpdate[]>([]);
 export const instructionIndexAtom = atom(0);
 export const screenshotAtom = atom<string | null>(null);
-export const scoresAtom = atom<{ red: number; yellow: number } | null>(null);
+export const scoresAtom = atom<{
+  red: number;
+  yellow: number;
+  redDiff: number;
+  yellowDiff: number;
+} | null>(null);

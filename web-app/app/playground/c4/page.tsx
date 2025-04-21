@@ -133,11 +133,22 @@ export default function Connect4() {
       setScreenshot(yellowScreenshot);
       currentScreenshot = yellowScreenshot;
       currentBoard = yellowBoard;
+      setScores({
+        red: yellowScores.r,
+        yellow: yellowScores.y,
+        redDiff:
+          currentScores && currentScores.red
+            ? yellowScores.r - currentScores.red
+            : 0,
+        yellowDiff:
+          currentScores && currentScores.yellow
+            ? yellowScores.y - currentScores.yellow
+            : 0,
+      });
       currentScores = {
         red: yellowScores.r,
         yellow: yellowScores.y,
       };
-      setScores(currentScores);
       const gameOverPlayer1 = await checkGameOver(
         player1SessionId,
         player1model
@@ -181,11 +192,23 @@ export default function Connect4() {
       setScreenshot(redScreenshot);
       currentScreenshot = redScreenshot;
       currentBoard = redBoard;
+      setScores({
+        ...currentScores,
+        red: redScores.r,
+        yellow: redScores.y,
+        redDiff:
+          currentScores && currentScores.red
+            ? redScores.r - currentScores.red
+            : 0,
+        yellowDiff:
+          currentScores && currentScores.yellow
+            ? redScores.y - currentScores.yellow
+            : 0,
+      });
       currentScores = {
         red: redScores.r,
         yellow: redScores.y,
       };
-      setScores(currentScores);
       const gameOverPlayer2 = await checkGameOver(
         player2SessionId,
         player2model

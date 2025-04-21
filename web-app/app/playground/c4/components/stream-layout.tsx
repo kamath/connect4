@@ -53,26 +53,38 @@ export function StreamLayout() {
             <div
               style={{
                 width: scores
-                  ? `${(scores.red / (scores.red + scores.yellow)) * 100}%`
+                  ? `${(scores.yellow / (scores.red + scores.yellow)) * 100}%`
                   : "50%",
               }}
-              className="h-full bg-red-500 flex items-center justify-end py-8 px-4 gap-4"
+              className="h-full bg-yellow-500 flex items-center justify-between py-2 rounded-l-xl"
             >
-              <h1 className="text-4xl font-bold text-white">
-                {Math.floor(redRatio * 100)}%
-              </h1>
+              {yellowRatio > 0.5 && (
+                <h1 className="text-4xl font-bold text-white pl-4 flex items-center gap-2">
+                  {Math.floor(yellowRatio * 100)}%{" "}
+                  <span className="text-sm">
+                    ({scores?.yellowDiff && scores?.yellowDiff > 0 ? "+" : ""}
+                    {Math.floor((scores?.yellowDiff || 0) * 10_000) / 100})
+                  </span>
+                </h1>
+              )}
             </div>
             <div
               style={{
                 width: scores
-                  ? `${(scores.yellow / (scores.red + scores.yellow)) * 100}%`
+                  ? `${(scores.red / (scores.red + scores.yellow)) * 100}%`
                   : "50%",
               }}
-              className="h-full bg-yellow-500 flex items-center justify-between py-8"
+              className="h-full bg-red-500 flex items-center justify-end py-2 px-4 gap-4 rounded-r-xl"
             >
-              <h1 className="text-4xl font-bold text-white pl-4">
-                {Math.floor(yellowRatio * 100)}%
-              </h1>
+              {redRatio > 0.5 && (
+                <h1 className="text-4xl font-bold text-white flex items-center gap-2">
+                  <span className="text-sm">
+                    ({scores?.redDiff && scores?.redDiff > 0 ? "+" : ""}
+                    {Math.floor((scores?.redDiff || 0) * 10_000) / 100})
+                  </span>
+                  {Math.floor(redRatio * 100)}%{" "}
+                </h1>
+              )}
             </div>
           </div>
           <div className="flex items-center justify-center">
