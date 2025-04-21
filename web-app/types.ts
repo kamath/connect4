@@ -17,7 +17,7 @@ export type StatusUpdate = {
   instruction: string | Connect4Instruction;
   screenshot?: string;
   board?: Board;
-  scores?: { red: number; yellow: number };
+  scores?: { red: number; yellow: number; redDiff: number; yellowDiff: number };
 };
 
 export type Player = "r" | "y";

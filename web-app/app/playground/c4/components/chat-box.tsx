@@ -139,6 +139,25 @@ export function ChatBox({ className }: ChatBoxProps) {
                     .toLocaleString()}{" "}
                   t/s)
                 </span>
+                {step.scores &&
+                  step.scores.redDiff &&
+                  step.scores.yellowDiff && (
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Resulting win probability:{" "}
+                      {(instruction.turn === "red" &&
+                        step.scores.redDiff > 0) ||
+                      (instruction.turn === "yellow" &&
+                        step.scores.yellowDiff > 0)
+                        ? " +"
+                        : " "}
+                      {(
+                        (instruction.turn === "red"
+                          ? step.scores.redDiff
+                          : step.scores.yellowDiff) * 100
+                      ).toFixed(2)}
+                      %
+                    </span>
+                  )}
               </div>
             </div>
           );

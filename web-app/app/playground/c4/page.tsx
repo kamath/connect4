@@ -150,6 +150,25 @@ export default function Connect4() {
             ? yellowScores.y - currentScores.yellow
             : 0,
       });
+      setPlayerInstructions((prev) => [
+        ...prev.slice(0, -1),
+        {
+          ...prev[prev.length - 1],
+          scores: {
+            ...currentScores,
+            red: yellowScores.r,
+            yellow: yellowScores.y,
+            redDiff:
+              currentScores && currentScores.red
+                ? yellowScores.r - currentScores.red
+                : 0,
+            yellowDiff:
+              currentScores && currentScores.yellow
+                ? yellowScores.y - currentScores.yellow
+                : 0,
+          },
+        },
+      ]);
       currentScores = {
         red: yellowScores.r,
         yellow: yellowScores.y,
@@ -211,6 +230,25 @@ export default function Connect4() {
             ? redScores.y - currentScores.yellow
             : 0,
       });
+      setPlayerInstructions((prev) => [
+        ...prev.slice(0, -1),
+        {
+          ...prev[prev.length - 1],
+          scores: {
+            ...currentScores,
+            red: redScores.r,
+            yellow: redScores.y,
+            redDiff:
+              currentScores && currentScores.red
+                ? redScores.r - currentScores.red
+                : 0,
+            yellowDiff:
+              currentScores && currentScores.yellow
+                ? redScores.y - currentScores.yellow
+                : 0,
+          },
+        },
+      ]);
       currentScores = {
         red: redScores.r,
         yellow: redScores.y,
