@@ -98,11 +98,10 @@ export default function Connect4() {
     let currentBoard: Board | undefined = undefined;
     let currentScores: { red: number; yellow: number } | undefined = undefined;
     while (true) {
-      const yellowPlayerInstruction = await getMove(
-        player1SessionId,
-        player1model,
-        "yellow"
-      );
+      const {
+        playerInstruction: yellowPlayerInstruction,
+        llmTelemetry: yellowLLMTelemetry,
+      } = await getMove(player1SessionId, player1model, "yellow");
       setTurn("yellow executing turn...");
       setPlayerInstructions((prev) => [
         ...prev,
@@ -115,6 +114,7 @@ export default function Connect4() {
           screenshot: currentScreenshot,
           board: currentBoard,
           scores: currentScores,
+          llmTelemetry: yellowLLMTelemetry,
         },
       ]);
       const {
@@ -158,11 +158,10 @@ export default function Connect4() {
         break;
       }
       setTurn("red getting turn...");
-      const redPlayerInstruction = await getMove(
-        player2SessionId,
-        player2model,
-        "red"
-      );
+      const {
+        playerInstruction: redPlayerInstruction,
+        llmTelemetry: redLLMTelemetry,
+      } = await getMove(player2SessionId, player2model, "red");
       setPlayerInstructions((prev) => [
         ...prev,
         {
@@ -174,6 +173,7 @@ export default function Connect4() {
           screenshot: currentScreenshot,
           board: currentBoard,
           scores: currentScores,
+          llmTelemetry: redLLMTelemetry,
         },
       ]);
       const {

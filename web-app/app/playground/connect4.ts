@@ -71,7 +71,8 @@ async function getPlayerInstructions(
       ],
     },
   ];
-  const { object: instruction } = await generateObject({
+  const startTime = performance.now();
+  const { object: instruction, usage } = await generateObject({
     model: model,
     messages: messages,
     schema: z.object({
@@ -90,12 +91,19 @@ async function getPlayerInstructions(
         ),
     }),
   });
+  const endTime = performance.now();
 
   return {
     turn: player,
     analysis: instruction.analysis,
     bestMove: instruction.bestMove,
     alternativeMoves: instruction.alternativeMoves,
+    llmTelemetry: {
+      totalInferenceMs: endTime - startTime,
+      promptTokens: usage.promptTokens ?? 0,
+      completionTokens: usage.completionTokens ?? 0,
+      totalTokens: usage.totalTokens ?? 0,
+    },
   };
 }
 
@@ -173,7 +181,10 @@ export async function getMove(
     player,
     client
   );
-  return instruction;
+  return {
+    playerInstruction: instruction,
+    llmTelemetry: instruction.llmTelemetry,
+  };
 }
 
 export async function getScreenshot(sessionId: string, model: string) {
@@ -194,7 +205,7 @@ export async function makeMove(
 
   const { object } = await generateObject({
     model: google("gemini-2.0-flash"),
-    prompt: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction: "${instruction}", get the column INDEX (0-indexed) of the move, assuming 7 total columns.`,
+    prompt: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, which is 1-indexed: "${instruction}", get the column index (0-indexed) of the move, assuming 7 total columns.`,
     schema: z.object({
       column: z.number().describe("The column index to make the move in"),
       alternativeMoves: z

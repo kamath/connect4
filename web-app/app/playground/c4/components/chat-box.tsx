@@ -66,9 +66,6 @@ export function ChatBox({ className }: ChatBoxProps) {
           return (
             <div key={index} className={`flex flex-col`}>
               <div className="flex items-center mb-1">
-                <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {instruction.turn === "yellow" ? player1Model : player2Model}
-                </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400 ml-2">
                   {new Date().toLocaleTimeString([], {
                     hour: "2-digit",
@@ -119,6 +116,20 @@ export function ChatBox({ className }: ChatBoxProps) {
                     {instruction.bestMove}
                   </p>
                 </div>
+              </div>
+              <div className="flex flex-col items-start my-2 gap-1">
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {instruction.turn === "yellow" ? player1Model : player2Model}
+                </span>
+                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                  {instruction.llmTelemetry.totalTokens} Total Tokens @{" "}
+                  {(
+                    (instruction.llmTelemetry.totalTokens /
+                      instruction.llmTelemetry.totalInferenceMs) *
+                    1000
+                  ).toFixed(2)}{" "}
+                  tokens/s
+                </span>
               </div>
             </div>
           );

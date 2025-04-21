@@ -3,6 +3,13 @@ export type Connect4Instruction = {
   analysis: string;
   bestMove: string;
   alternativeMoves: string[];
+  llmTelemetry: {
+    timeToFirstTokenMs?: number;
+    totalInferenceMs: number;
+    promptTokens: number;
+    completionTokens: number;
+    totalTokens: number;
+  };
 };
 
 export type StatusUpdate = {
