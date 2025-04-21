@@ -5,10 +5,8 @@ export const player1sessionIdAtom = atom<string | null>(null);
 export const player2sessionIdAtom = atom<string | null>(null);
 export const player1debugUrlAtom = atom<string | null>(null);
 export const player2debugUrlAtom = atom<string | null>(null);
-export const player1modelAtom = atom<string>("openai/gpt-4.1-mini");
-export const player2modelAtom = atom<string>(
-  "google/gemini-2.5-flash-preview-04-17"
-);
+export const player1modelAtom = atom<string>("openai/gpt-4.1-nano");
+export const player2modelAtom = atom<string>("google/gemini-2.0-flash");
 export const winnerAtom = atom<string | null>(null);
 export const turnAtom = atom<
   | "press start"
