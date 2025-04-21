@@ -203,6 +203,8 @@ export async function makeMove(
     "google/gemini-2.0-flash"
   );
 
+  const boardBeforeMove = await getBoard(stagehandPlayer.page);
+
   const { object } = await generateObject({
     model: google("gemini-2.0-flash"),
     prompt: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, which is 1-indexed: "${instruction}", get the column index (0-indexed) of the move, assuming 7 total columns.`,
@@ -214,13 +216,15 @@ export async function makeMove(
         .optional(),
     }),
   });
-
+  const column = object.column;
+  if (boardBeforeMove[0][column] !== "o") {
+    throw new Error("Column is already full");
+  }
   await stagehandPlayer.page.locator(`#cell-1-${object.column}`).click();
 
   // Get screenshot after move
   const screenshot = await getScreenshot(sessionId, "google/gemini-2.0-flash");
   const board = await getBoard(stagehandPlayer.page);
-  //   const scores = getPlayerScores(board);
   const scores = await estimateWinProbabilities(
     board,
     player === "yellow" ? "r" : "y",

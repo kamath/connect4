@@ -4,9 +4,12 @@ import { cn } from "@/lib/utils";
 import { useAtomValue } from "jotai";
 import { useEffect, useRef } from "react";
 import {
+  errorAtom,
+  MAX_RETRIES,
   player1modelAtom,
   player2modelAtom,
   playerInstructionsAtom,
+  retriesAtom,
   turnAtom,
   winnerAtom,
 } from "../atoms";
@@ -18,12 +21,13 @@ interface ChatBoxProps {
 
 export function ChatBox({ className }: ChatBoxProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const retries = useAtomValue(retriesAtom);
   const playerInstructions = useAtomValue(playerInstructionsAtom);
   const player1Model = useAtomValue(player1modelAtom);
   const player2Model = useAtomValue(player2modelAtom);
   const turn = useAtomValue(turnAtom);
   const winner = useAtomValue(winnerAtom);
-
+  const error = useAtomValue(errorAtom);
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [playerInstructions]);
@@ -61,7 +65,6 @@ export function ChatBox({ className }: ChatBoxProps) {
               </div>
             );
           }
-
           const instruction = step.instruction;
           return (
             <div key={index} className={`flex flex-col`}>
@@ -140,28 +143,44 @@ export function ChatBox({ className }: ChatBoxProps) {
                   t/s)
                 </span>
                 {step.scores &&
-                  step.scores.redDiff &&
-                  step.scores.yellowDiff && (
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                      Resulting win probability:{" "}
-                      {(instruction.turn === "red" &&
-                        step.scores.redDiff > 0) ||
-                      (instruction.turn === "yellow" &&
-                        step.scores.yellowDiff > 0)
-                        ? " +"
-                        : " "}
-                      {(
-                        (instruction.turn === "red"
-                          ? step.scores.redDiff
-                          : step.scores.yellowDiff) * 100
-                      ).toFixed(2)}
-                      %
-                    </span>
-                  )}
+                step.scores.redDiff &&
+                step.scores.yellowDiff ? (
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Win probability:{" "}
+                    {(
+                      (instruction.turn === "red"
+                        ? step.scores.red
+                        : step.scores.yellow) * 100
+                    ).toFixed(2)}
+                    % (
+                    {(instruction.turn === "red" && step.scores.redDiff > 0) ||
+                    (instruction.turn === "yellow" &&
+                      step.scores.yellowDiff > 0)
+                      ? "+"
+                      : ""}
+                    {(
+                      (instruction.turn === "red"
+                        ? step.scores.redDiff
+                        : step.scores.yellowDiff) * 100
+                    ).toFixed(2)}
+                    )
+                  </span>
+                ) : (
+                  ""
+                )}
               </div>
             </div>
           );
         })}
+        {error && (
+          <div className={`flex items-center justify-center`}>
+            <div className="flex items-center justify-center mb-1 bg-red-500 w-fit p-2 rounded-md">
+              <span className="text-xs text-zinc-50">
+                Error: {error}. Retrying ({retries} / {MAX_RETRIES})
+              </span>
+            </div>
+          </div>
+        )}
         {!winner && (
           <div className={`flex flex-col`}>
             <div className="flex items-center mb-1">

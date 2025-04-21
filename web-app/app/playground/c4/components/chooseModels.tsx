@@ -19,7 +19,7 @@ const MODELS = [
   },
   {
     name: "Gemini 2.5 Pro",
-    value: "gemini-2.5-pro-preview-03-25",
+    value: "google/gemini-2.5-pro-preview-03-25",
   },
   {
     name: "GPT-4o",

@@ -32,4 +32,7 @@ export const scoresAtom = atom<{
   redDiff: number;
   yellowDiff: number;
 } | null>(null);
+export const errorAtom = atom<string | null>(null);
+export const MAX_RETRIES = 3;
+export const retriesAtom = atom(0);
 export const activePlayerAtom = atom<"red" | "yellow">("yellow");
