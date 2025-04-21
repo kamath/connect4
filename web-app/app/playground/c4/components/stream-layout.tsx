@@ -142,7 +142,7 @@ export function StreamLayout() {
           />
         </div>
       </div>
-      <div className="w-full lg:max-w-[400px] overflow-y-auto h-[calc(100vh-2rem)] lg:h-screen">
+      <div className="w-full lg:w-[400px] h-full overflow-y-auto">
         <ChatBox className="h-full" />
       </div>
     </div>
