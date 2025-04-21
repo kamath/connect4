@@ -14,7 +14,6 @@ import {
 import { useAtom, useAtomValue } from "jotai";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { useEffect } from "react";
 
 const providerLogos = {
@@ -141,14 +140,6 @@ export function StreamLayout() {
               activePlayer === "red" ? "block" : "hidden"
             )}
           />
-
-          <Button
-            onClick={() =>
-              setActivePlayer(activePlayer === "yellow" ? "red" : "yellow")
-            }
-          >
-            Switch Player POV
-          </Button>
         </div>
       </div>
       <div className="w-full lg:max-w-[400px] lg:overflow-y-auto h-screen">

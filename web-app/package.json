@@ -15,7 +15,7 @@
     "@browserbasehq/sdk": "^2.5.0",
     "@browserbasehq/stagehand": "^2.1.0",
     "@radix-ui/react-select": "^2.2.1",
-    "@radix-ui/react-slot": "^1.2.0",
+    "@radix-ui/react-slot": "^1.0.2",
     "ai": "^4.3.9",
     "boxen": "^8.0.1",
     "chalk": "^5.4.1",

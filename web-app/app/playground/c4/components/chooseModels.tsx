@@ -1,12 +1,5 @@
 "use client";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAtom, useSetAtom } from "jotai";
 import {
   isPlayingAtom,
@@ -25,16 +18,16 @@ const MODELS = [
     value: "google/gemini-2.5-flash-preview-04-17",
   },
   {
+    name: "Gemini 2.5 Pro",
+    value: "gemini-2.5-pro-preview-03-25",
+  },
+  {
     name: "GPT-4o",
     value: "openai/gpt-4o",
   },
   {
     name: "GPT-4o Mini",
     value: "openai/gpt-4o-mini",
-  },
-  {
-    name: "O3 Mini",
-    value: "openai/o3-mini",
   },
   {
     name: "O4 Mini",
@@ -77,42 +70,32 @@ export const ChooseModels = () => {
         </div>
       )}
       <p className="text-lg">Player 1</p>
-      <Select
+      <select
         value={player1model}
-        onValueChange={(value) => setPlayer1model(value)}
+        onChange={(e) => setPlayer1model(e.target.value)}
+        className="w-full max-w-xs p-2 border rounded-md"
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Select a model" />
-        </SelectTrigger>
-        <SelectContent>
-          {MODELS.filter((model) => model.value !== player2model).map(
-            (model) => (
-              <SelectItem key={model.value} value={model.value}>
-                {model.name}
-              </SelectItem>
-            )
-          )}
-        </SelectContent>
-      </Select>
+        <option value="">Select a model</option>
+        {MODELS.filter((model) => model.value !== player2model).map((model) => (
+          <option key={model.value} value={model.value}>
+            {model.name}
+          </option>
+        ))}
+      </select>
       <p className="text-sm">vs</p>
       <p className="text-lg">Player 2</p>
-      <Select
+      <select
         value={player2model}
-        onValueChange={(value) => setPlayer2model(value)}
+        onChange={(e) => setPlayer2model(e.target.value)}
+        className="w-full max-w-xs p-2 border rounded-md"
       >
-        <SelectTrigger>
-          <SelectValue placeholder="Select a model" />
-        </SelectTrigger>
-        <SelectContent>
-          {MODELS.filter((model) => model.value !== player1model).map(
-            (model) => (
-              <SelectItem key={model.value} value={model.value}>
-                {model.name}
-              </SelectItem>
-            )
-          )}
-        </SelectContent>
-      </Select>
+        <option value="">Select a model</option>
+        {MODELS.filter((model) => model.value !== player1model).map((model) => (
+          <option key={model.value} value={model.value}>
+            {model.name}
+          </option>
+        ))}
+      </select>
       <button
         className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors mt-8"
         onClick={() => {
