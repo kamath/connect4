@@ -47,7 +47,7 @@ export function StreamLayout() {
   }, [turn, setActivePlayer]);
 
   return (
-    <div className="flex flex-col lg:flex-row h-screen w-full overflow-hidden">
+    <div className="flex flex-col lg:flex-row h-screen w-full overflow-auto justify-items-stretch">
       <div className="flex-grow w-full h-full flex items-center justify-between flex-col gap-4">
         <div className="flex w-full justify-between py-4">
           <div className="flex items-center justify-center">
@@ -142,7 +142,7 @@ export function StreamLayout() {
           />
         </div>
       </div>
-      <div className="w-full lg:max-w-[400px] lg:overflow-y-auto h-screen">
+      <div className="w-full lg:max-w-[400px] overflow-y-auto h-[calc(100vh-2rem)] lg:h-screen">
         <ChatBox className="h-full" />
       </div>
     </div>

@@ -86,26 +86,28 @@ export function ChatBox({ className }: ChatBoxProps) {
               >
                 <div className="px-4 py-2.5 flex flex-col gap-4">
                   <div className="text-sm">
-                    <span className="font-bold">Board before move:</span>
+                    <span className="font-bold">Board:</span>
                     <br />{" "}
-                    {step.board?.map((row, index) => {
-                      return (
-                        <div key={index}>
-                          {row
-                            .map((cell) => {
-                              switch (cell) {
-                                case "r":
-                                  return "🔴";
-                                case "y":
-                                  return "🟡";
-                                default:
-                                  return "⚫";
-                              }
-                            })
-                            .join(" ")}
-                        </div>
-                      );
-                    })}
+                    {step.board
+                      ? step.board.map((row, index) => {
+                          return (
+                            <div key={index}>
+                              {row
+                                .map((cell) => {
+                                  switch (cell) {
+                                    case "r":
+                                      return "🔴";
+                                    case "y":
+                                      return "🟡";
+                                    default:
+                                      return "⚫";
+                                  }
+                                })
+                                .join(" ")}
+                            </div>
+                          );
+                        })
+                      : "Empty board"}
                   </div>
                   <p className="text-sm">
                     <span className="font-bold">Analysis:</span>{" "}
