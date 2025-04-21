@@ -47,7 +47,7 @@ export function StreamLayout() {
   }, [turn, setActivePlayer]);
 
   return (
-    <div className="flex flex-col h-screen lg:flex-row w-full overflow-hidden justify-items-stretch">
+    <div className="flex flex-col lg:flex-row h-[100dvh] w-full overflow-hidden justify-items-stretch">
       <div className="flex-grow w-full flex items-center justify-between flex-col gap-4">
         <div className="flex w-full justify-between py-4">
           <div className="flex items-center justify-center">
