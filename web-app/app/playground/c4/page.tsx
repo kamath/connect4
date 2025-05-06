@@ -140,12 +140,15 @@ export default function Connect4() {
             scores: yellowScores,
           } = await makeMove(
             player1SessionId,
+            player1model,
+            player2model,
             "yellow",
             `Make move ${
               yellowPlayerInstruction.bestMove
             } and these alternative moves: ${yellowPlayerInstruction.alternativeMoves.join(
               ", "
-            )}`
+            )}`,
+            { y: currentScores?.yellow || 0, r: currentScores?.red || 0 }
           );
           setScreenshot(yellowScreenshot);
           currentScreenshot = yellowScreenshot;
@@ -241,17 +244,20 @@ export default function Connect4() {
             },
           ]);
           const {
-            screenshot: redScreenshot,
             board: redBoard,
             scores: redScores,
+            screenshot: redScreenshot,
           } = await makeMove(
             player2SessionId,
+            player1model,
+            player2model,
             "red",
             `Make move ${
               redPlayerInstruction.bestMove
             } and these alternative moves: ${redPlayerInstruction.alternativeMoves.join(
               ", "
-            )}`
+            )}`,
+            { y: currentScores?.yellow || 0, r: currentScores?.red || 0 }
           );
           setScreenshot(redScreenshot);
           currentScreenshot = redScreenshot;

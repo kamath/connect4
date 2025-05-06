@@ -1,6 +1,6 @@
 "use server";
 
-import { Page, Stagehand } from "@browserbasehq/stagehand";
+import { Page } from "@browserbasehq/stagehand";
 import { initFromSessionId } from "./main";
 import { generateObject, LanguageModel } from "ai";
 import { CoreMessage } from "ai";
@@ -8,8 +8,13 @@ import { getModel } from "./utils";
 import { z } from "zod";
 import { Connect4Instruction } from "@/types";
 import { google } from "@ai-sdk/google";
-// import { getPlayerScores } from "./minimax";
 import { estimateWinProbabilities } from "./mcts";
+import { initLogger, traced, wrapAISDKModel, wrapTraced } from "braintrust";
+
+const logger = initLogger({
+  projectName: "connect4",
+  apiKey: process.env.BRAINTRUST_API_KEY,
+});
 
 export async function readyPlayer1(sessionId: string, model: string) {
   const stagehand = await initFromSessionId(sessionId, model);
@@ -45,11 +50,11 @@ export async function readyPlayer2(
 }
 
 async function getPlayerInstructions(
-  stagehandPlayer: Stagehand,
+  page: Page,
   player: "yellow" | "red",
   model: LanguageModel
 ): Promise<Connect4Instruction> {
-  const screenshotData = await stagehandPlayer.page.screenshot();
+  const screenshotData = await page.screenshot();
   const messages: CoreMessage[] = [
     {
       role: "user",
@@ -176,10 +181,14 @@ export async function getMove(
   // Get current board state
   const stagehandPlayer = await initFromSessionId(sessionId, model);
   const client = getModel(model);
-  const instruction = await getPlayerInstructions(
-    stagehandPlayer,
+  const getPlayerInstructionsWrapper = wrapTraced(
+    getPlayerInstructions,
+    logger
+  );
+  const instruction = await getPlayerInstructionsWrapper(
+    stagehandPlayer.page,
     player,
-    client
+    wrapAISDKModel(client)
   );
   return {
     playerInstruction: instruction,
@@ -195,40 +204,90 @@ export async function getScreenshot(sessionId: string, model: string) {
 
 export async function makeMove(
   sessionId: string,
+  player1model: string,
+  player2model: string,
   player: "yellow" | "red",
-  instruction: string
+  instruction: string,
+  initialScores: { y: number; r: number }
 ) {
   const stagehandPlayer = await initFromSessionId(
     sessionId,
     "google/gemini-2.0-flash"
   );
 
-  const boardBeforeMove = await getBoard(stagehandPlayer.page);
+  const result = await traced(
+    async (span) => {
+      const boardBeforeMove = await getBoard(stagehandPlayer.page);
 
-  const { object } = await generateObject({
-    model: google("gemini-2.0-flash"),
-    prompt: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, which is 1-indexed: "${instruction}", get the column index (0-indexed) of the move, assuming 7 total columns.`,
-    schema: z.object({
-      column: z.number().describe("The column index to make the move in"),
-      alternativeMoves: z
-        .array(z.number())
-        .describe("any included alternative column indices to click")
-        .optional(),
-    }),
-  });
-  const column = object.column;
-  if (boardBeforeMove[0][column] !== "o") {
-    throw new Error("Column is already full");
-  }
-  await stagehandPlayer.page.locator(`#cell-1-${object.column}`).click();
+      const { object } = await generateObject({
+        model: wrapAISDKModel(google("gemini-2.0-flash")),
+        prompt: `You are the ${player} player playing connect 4. Make ONLY ONE move. The move is described in the following instruction, which is 1-indexed: "${instruction}", get the column index (0-indexed) of the move, assuming 7 total columns.`,
+        schema: z.object({
+          column: z.number().describe("The column index to make the move in"),
+          alternativeMoves: z
+            .array(z.number())
+            .describe("any included alternative column indices to click")
+            .optional(),
+        }),
+      });
+      const column = object.column;
+      if (boardBeforeMove[0][column] !== "o") {
+        throw new Error("Column is already full");
+      }
+      await stagehandPlayer.page.locator(`#cell-1-${object.column}`).click();
 
-  // Get screenshot after move
-  const screenshot = await getScreenshot(sessionId, "google/gemini-2.0-flash");
-  const board = await getBoard(stagehandPlayer.page);
-  const scores = await estimateWinProbabilities(
-    board,
-    player === "yellow" ? "r" : "y",
-    10000
+      // Get screenshot after move
+      const screenshot = await getScreenshot(
+        sessionId,
+        "google/gemini-2.0-flash"
+      );
+      const board = await getBoard(stagehandPlayer.page);
+      const scores = await estimateWinProbabilities(
+        board,
+        player === "yellow" ? "r" : "y",
+        10000
+      );
+      const loggingScores = {
+        winProbability: player === "yellow" ? scores.y : scores.r,
+        diff:
+          initialScores.y !== 0 && initialScores.r !== 0
+            ? player === "yellow"
+              ? ((scores.y - initialScores.y) / initialScores.y + 1) / 2
+              : ((scores.r - initialScores.r) / initialScores.r + 1) / 2
+            : 0.5,
+        validMove: board === boardBeforeMove ? 0 : 1,
+      };
+
+      const result = { board, scores };
+
+      span.log({
+        input: player === "yellow" ? player1model : player2model,
+        output: result,
+        scores: loggingScores,
+        metadata: {
+          browserbaseSessionId: sessionId,
+          turn: player,
+          instruction: instruction,
+          initialScores,
+          redModel: player1model,
+          yellowModel: player2model,
+          activeModel: player === "yellow" ? player1model : player2model,
+          boardBeforeMove,
+          boardAfterMove: board,
+          validMove: board === boardBeforeMove ? 0 : 1,
+        },
+      });
+
+      return {
+        ...result,
+        screenshot,
+        requestId: await span.export(),
+      };
+    },
+    {
+      name: `makeMove${player}`,
+      type: "function",
+    }
   );
-  return { screenshot, board, scores };
+  return result;
 }
